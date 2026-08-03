@@ -59,6 +59,8 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                        modifier = Modifier.padding(end = 12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                         Text("%.0f mg | %d ml".format(record.caffeineMg, record.volumeMl),
