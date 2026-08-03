@@ -34,7 +34,7 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
         val halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
 
-        val records = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
+        val records = db.drinkDao().getRecordsForDaySync(startOfDay, endOfDay)
         val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(records, halfLife, now)
         val totalToday = records.sumOf { it.caffeineMg }
 
