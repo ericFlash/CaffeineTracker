@@ -157,6 +157,7 @@ private fun LineChart(
     val lineColor = MaterialTheme.colorScheme.primary
     val textColor = MaterialTheme.colorScheme.onSurface
     val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val surfaceColor = MaterialTheme.colorScheme.surface
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
@@ -196,7 +197,7 @@ private fun LineChart(
             // draw dots
             pts.forEach { pt ->
                 drawCircle(lineColor, radius = 4f, center = pt)
-                drawCircle(MaterialTheme.colorScheme.surface, radius = 2.5f, center = pt)
+                drawCircle(surfaceColor, radius = 2.5f, center = pt)
             }
 
             // x labels every 5
