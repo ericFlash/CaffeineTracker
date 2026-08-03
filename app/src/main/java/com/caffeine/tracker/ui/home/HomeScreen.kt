@@ -132,6 +132,7 @@ private fun CurveCard(state: HomeUiState) {
                     dailyLimit = state.dailyLimit,
                     curveStartTime = state.curveStartTime,
                     curveEndTime = state.curveEndTime,
+                    intakeTimestamps = state.todayRecords.map { it.timestamp },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -145,6 +146,7 @@ private fun CaffeineCurve(
     dailyLimit: Double,
     curveStartTime: Long = 0L,
     curveEndTime: Long = 0L,
+    intakeTimestamps: List<Long> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
@@ -250,12 +252,13 @@ private fun CaffeineCurve(
             }
             drawPath(fillPath, lineColor.copy(alpha = 0.08f))
 
-            // dots for drink records
-            val drawnTimes = mutableSetOf<Long>()
-            points.forEach { pt ->
-                if (pt.level > 0.5 && drawnTimes.add(pt.timestamp / 60_000)) {
-                    val x = ((pt.timestamp - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
-                    val y = size.height * (1f - (pt.level / maxVal)).toFloat()
+            // dots at actual drink intake times
+            intakeTimestamps.forEach { ts ->
+                if (ts in displayStart..displayEnd) {
+                    val x = ((ts - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
+                    val pt = points.minByOrNull { kotlin.math.abs(it.timestamp - ts) }
+                    val level = pt?.level ?: 0.0
+                    val y = size.height * (1f - (level / maxVal)).toFloat()
                     drawCircle(lineColor, radius = 5f, center = Offset(x, y))
                     drawCircle(surfaceColor, radius = 3f, center = Offset(x, y))
                 }
