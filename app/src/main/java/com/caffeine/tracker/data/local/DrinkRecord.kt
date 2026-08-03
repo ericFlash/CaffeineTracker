@@ -8,6 +8,7 @@ data class DrinkRecord(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val drinkName: String,
+    val emoji: String = "☕",
     val caffeineMg: Double,
     val volumeMl: Int,
     val timestamp: Long,
