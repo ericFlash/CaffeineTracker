@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -21,21 +25,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caffeine.tracker.data.repository.SettingsRepository
 
-@OptIn(ExperimentalMaterial3Api::class)
+private const val DEFAULT_WEIGHT = 70f
+private const val DEFAULT_HALF_LIFE = 5.0f
+private const val DEFAULT_LIMIT = 400f
+
 @Composable
 fun SettingsScreen(settingsRepository: SettingsRepository) {
     var halfLife by remember { mutableFloatStateOf(settingsRepository.halfLifeHours.toFloat()) }
     var dailyLimit by remember { mutableFloatStateOf(settingsRepository.dailyLimitMg.toFloat()) }
     var weight by remember { mutableFloatStateOf(settingsRepository.bodyWeightKg) }
+
+    val recommendedLimit = (weight * 5.7f).coerceIn(200f, 600f)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,24 +66,36 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                 LabeledSlider(
                     label = "咖啡因半衰期: %.1f 小时".format(halfLife),
                     value = halfLife,
-                    valueRange = 2f..10f,
+                    valueRange = 2f..12f,
                     onValueChange = { halfLife = it; settingsRepository.halfLifeHours = it.toDouble() }
                 )
-                Spacer(Modifier.height(16.dp))
-
-                LabeledSlider(
-                    label = "每日安全限额: %.0f mg".format(dailyLimit),
-                    value = dailyLimit,
-                    valueRange = 100f..1000f,
-                    onValueChange = { dailyLimit = it; settingsRepository.dailyLimitMg = it.toDouble() }
-                )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 LabeledSlider(
                     label = "体重: %.0f kg".format(weight),
                     value = weight,
                     valueRange = 30f..150f,
-                    onValueChange = { weight = it; settingsRepository.bodyWeightKg = it }
+                    onValueChange = { w ->
+                        weight = w
+                        settingsRepository.bodyWeightKg = w
+                        dailyLimit = recommendedLimit
+                        settingsRepository.dailyLimitMg = recommendedLimit.toDouble()
+                    }
+                )
+
+                Spacer(Modifier.height(12.dp))
+                Text("每日安全限额: %.0f mg".format(dailyLimit),
+                    style = MaterialTheme.typography.bodyMedium)
+                Text("基于体重推荐: %.0f mg  (%.0f kg × 5.7mg/kg)".format(recommendedLimit, weight),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                Spacer(Modifier.height(4.dp))
+                Slider(
+                    value = dailyLimit,
+                    onValueChange = { dailyLimit = it; settingsRepository.dailyLimitMg = it.toDouble() },
+                    valueRange = 100f..1000f,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
                 )
             }
         }
@@ -92,6 +112,26 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                 Text("深色/浅色模式跟随系统", style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
+        }
+
+        Button(
+            onClick = {
+                weight = DEFAULT_WEIGHT
+                halfLife = DEFAULT_HALF_LIFE
+                dailyLimit = DEFAULT_LIMIT
+                settingsRepository.bodyWeightKg = DEFAULT_WEIGHT
+                settingsRepository.halfLifeHours = DEFAULT_HALF_LIFE.toDouble()
+                settingsRepository.dailyLimitMg = DEFAULT_LIMIT.toDouble()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        ) {
+            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+            Text("恢复默认设置")
         }
     }
 }
