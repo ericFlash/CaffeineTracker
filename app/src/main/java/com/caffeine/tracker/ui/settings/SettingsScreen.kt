@@ -67,7 +67,8 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                     label = "咖啡因半衰期: %.1f 小时".format(halfLife),
                     value = halfLife,
                     valueRange = 2f..12f,
-                    onValueChange = { halfLife = it; settingsRepository.halfLifeHours = it.toDouble() }
+                    onValueChange = { halfLife = it },
+                    onValueChangeFinished = { settingsRepository.halfLifeHours = halfLife.toDouble() }
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -75,11 +76,9 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                     label = "体重: %.0f kg".format(weight),
                     value = weight,
                     valueRange = 30f..150f,
-                    onValueChange = { w ->
-                        weight = w
-                        settingsRepository.bodyWeightKg = w
-                        dailyLimit = recommendedLimit
-                        settingsRepository.dailyLimitMg = recommendedLimit.toDouble()
+                    onValueChange = { weight = it },
+                    onValueChangeFinished = {
+                        settingsRepository.bodyWeightKg = weight
                     }
                 )
 
@@ -92,7 +91,8 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                 Spacer(Modifier.height(4.dp))
                 Slider(
                     value = dailyLimit,
-                    onValueChange = { dailyLimit = it; settingsRepository.dailyLimitMg = it.toDouble() },
+                    onValueChange = { dailyLimit = it },
+                    onValueChangeFinished = { settingsRepository.dailyLimitMg = dailyLimit.toDouble() },
                     valueRange = 100f..1000f,
                     modifier = Modifier.fillMaxWidth(),
                     colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
@@ -141,12 +141,14 @@ private fun LabeledSlider(
     label: String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: (() -> Unit)? = null,
 ) {
     Text(label, style = MaterialTheme.typography.bodyMedium)
     Slider(
         value = value,
         onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished ?: {},
         valueRange = valueRange,
         modifier = Modifier.fillMaxWidth(),
         colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
