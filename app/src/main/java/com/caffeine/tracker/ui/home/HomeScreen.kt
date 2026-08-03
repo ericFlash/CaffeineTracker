@@ -153,6 +153,7 @@ private fun CaffeineCurve(
     val textColor = MaterialTheme.colorScheme.onSurface
     val surfaceColor = MaterialTheme.colorScheme.surface
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+    val sdfDay = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
 
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
@@ -177,20 +178,25 @@ private fun CaffeineCurve(
             )
         }
 
-        // time labels on x-axis (evenly spaced, 4-6 ticks)
+        // time labels on x-axis
         val timeLabelPaint = android.graphics.Paint().apply {
             color = textColor.hashCode()
             textSize = 16f
             alpha = 140
             textAlign = android.graphics.Paint.Align.CENTER
         }
-        val tickCount = 5
+        val rangeHours = (displayEnd - displayStart) / 3_600_000f
+        val tickCount = when {
+            rangeHours <= 4 -> 4
+            rangeHours <= 12 -> 6
+            else -> 8
+        }
+        val useDayFormat = rangeHours > 24
         for (i in 0..tickCount) {
             val t = displayStart + ((displayEnd - displayStart) * i / tickCount)
             val x = ((t - displayStart) / timeRange * size.width)
-            drawContext.canvas.nativeCanvas.drawText(
-                sdf.format(java.util.Date(t)), x, size.height - 4f, timeLabelPaint
-            )
+            val label = if (useDayFormat) sdfDay.format(java.util.Date(t)) else sdf.format(java.util.Date(t))
+            drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 4f, timeLabelPaint)
         }
 
         // limit line
