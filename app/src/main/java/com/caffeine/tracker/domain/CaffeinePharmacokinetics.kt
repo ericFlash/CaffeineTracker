@@ -6,7 +6,7 @@ import kotlin.math.ln
 
 object CaffeinePharmacokinetics {
 
-    const val SLEEP_SAFE_THRESHOLD_MG = 50.0
+    const val SLEEP_SAFE_MG = 50.0
 
     fun calculateCurrentLevel(
         records: List<DrinkRecord>,
@@ -48,18 +48,6 @@ object CaffeinePharmacokinetics {
         return points
     }
 
-    fun estimatedTimeToSleepSafe(
-        records: List<DrinkRecord>,
-        halfLifeHours: Double,
-        now: Long = System.currentTimeMillis()
-    ): Long {
-        val current = calculateCurrentLevel(records, halfLifeHours, now)
-        if (current <= SLEEP_SAFE_THRESHOLD_MG) return 0L
-        val lambda = ln(2.0) / (halfLifeHours * 3_600_000.0)
-        val hours = ln(current / SLEEP_SAFE_THRESHOLD_MG) / (lambda * 3_600_000.0)
-        return (hours * 3_600_000.0).toLong().coerceAtLeast(0L)
-    }
-
     fun estimatedTimeToZero(
         records: List<DrinkRecord>,
         halfLifeHours: Double,
@@ -69,6 +57,18 @@ object CaffeinePharmacokinetics {
         if (current <= 1.0) return 0L
         val lambda = ln(2.0) / (halfLifeHours * 3_600_000.0)
         val hours = ln(current / 1.0) / (lambda * 3_600_000.0)
+        return (hours * 3_600_000.0).toLong().coerceAtLeast(0L)
+    }
+
+    fun estimatedTimeToSleepSafe(
+        records: List<DrinkRecord>,
+        halfLifeHours: Double,
+        now: Long = System.currentTimeMillis()
+    ): Long {
+        val current = calculateCurrentLevel(records, halfLifeHours, now)
+        if (current <= SLEEP_SAFE_MG) return 0L
+        val lambda = ln(2.0) / (halfLifeHours * 3_600_000.0)
+        val hours = ln(current / SLEEP_SAFE_MG) / (lambda * 3_600_000.0)
         return (hours * 3_600_000.0).toLong().coerceAtLeast(0L)
     }
 }
