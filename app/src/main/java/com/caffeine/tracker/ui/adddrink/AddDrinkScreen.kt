@@ -2,10 +2,10 @@ package com.caffeine.tracker.ui.adddrink
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -117,6 +117,7 @@ private fun DrinkDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    var focused by remember { mutableStateOf(false) }
 
     val filtered = if (query.isBlank()) drinks
         else drinks.filter { it.name.contains(query, ignoreCase = true) }
@@ -125,28 +126,36 @@ private fun DrinkDropdown(
         Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
 
-        OutlinedTextField(
-            value = if (selectedDrink != null && !expanded) "${selectedDrink.emoji} ${selectedDrink.name}" else query,
-            onValueChange = {
-                query = it
-                expanded = true
-            },
-            readOnly = false,
-            singleLine = true,
-            trailingIcon = {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null,
-                    modifier = Modifier.clickable { expanded = !expanded })
-            },
-            modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-            shape = RoundedCornerShape(12.dp),
-            placeholder = { Text("搜索饮品...") }
-        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = if (selectedDrink != null && !focused) "${selectedDrink.emoji} ${selectedDrink.name}" else query,
+                onValueChange = {
+                    query = it
+                    expanded = true
+                    focused = true
+                },
+                singleLine = true,
+                trailingIcon = {
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null,
+                        modifier = Modifier.clickable { expanded = !expanded; focused = true })
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                placeholder = { Text("点击选择饮品...") }
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = !expanded; focused = true }
+            )
+        }
 
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = {
                 expanded = false
                 query = ""
+                focused = false
             },
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
@@ -167,6 +176,7 @@ private fun DrinkDropdown(
                         onDrinkSelected(drink)
                         expanded = false
                         query = ""
+                        focused = false
                     }
                 )
             }
@@ -192,17 +202,26 @@ private fun SizeDropdown(
     Column {
         Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        OutlinedTextField(
-            value = selectedLabel,
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null,
-                    modifier = Modifier.clickable { expanded = true })
-            },
-            modifier = Modifier.fillMaxWidth().clickable { expanded = true },
-            shape = RoundedCornerShape(12.dp)
-        )
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = selectedLabel,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = {
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null,
+                        modifier = Modifier.clickable { expanded = true })
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true }
+            )
+        }
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
