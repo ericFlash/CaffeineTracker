@@ -1,0 +1,2 @@
+-keepclassmembers class * extends androidx.room.RoomDatabase { *; }
+-keep class * extends androidx.work.Worker { *; }
