@@ -3,8 +3,6 @@ package com.caffeine.tracker.ui.adddrink
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,22 +11,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddDrinkScreen(
     viewModel: AddDrinkViewModel,
@@ -75,29 +79,22 @@ fun AddDrinkScreen(
         if (state.selectedDrink != null) {
             item {
                 Spacer(Modifier.height(8.dp))
-                Text("选择杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-
-            item {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    state.selectedDrink!!.sizes.forEach { size ->
-                        FilterChip(
-                            selected = state.selectedSize == size && !state.showCustomVolume,
-                            onClick = { viewModel.selectSize(size) },
-                            label = { Text(size.label) }
-                        )
+                SizeDropdown(
+                    sizes = state.selectedDrink!!.sizes.map { it.label },
+                    selectedLabel = if (state.showCustomVolume) "自定义 (${
+                        state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
+                    }ml)"
+                    else state.selectedSize?.label ?: "",
+                    onSizeSelected = { label ->
+                        val drink = state.selectedDrink!!
+                        val match = drink.sizes.find { it.label == label }
+                        if (match != null) viewModel.selectSize(match)
+                    },
+                    onCustomSelected = {
+                        val defaultVol = state.selectedDrink!!.standardVolumeMl
+                        viewModel.setCustomVolume(defaultVol.toString())
                     }
-                    FilterChip(
-                        selected = state.showCustomVolume,
-                        onClick = {
-                            if (!state.showCustomVolume) {
-                                val defaultVol = state.selectedDrink!!.standardVolumeMl
-                                viewModel.setCustomVolume(defaultVol.toString())
-                            }
-                        },
-                        label = { Text("自定义") }
-                    )
-                }
+                )
             }
 
             if (state.showCustomVolume) {
@@ -139,6 +136,54 @@ fun AddDrinkScreen(
                     Text("记录摄入", modifier = Modifier.padding(8.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SizeDropdown(
+    sizes: List<String>,
+    selectedLabel: String,
+    onSizeSelected: (String) -> Unit,
+    onCustomSelected: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = selectedLabel,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = {
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null,
+                    modifier = Modifier.clickable { expanded = true })
+            },
+            modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+            shape = RoundedCornerShape(12.dp)
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            sizes.forEach { label ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    onClick = {
+                        onSizeSelected(label)
+                        expanded = false
+                    }
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("自定义", fontWeight = FontWeight.Medium) },
+                onClick = {
+                    onCustomSelected()
+                    expanded = false
+                }
+            )
         }
     }
 }
