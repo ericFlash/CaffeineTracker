@@ -17,7 +17,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,8 +36,6 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
     var halfLife by remember { mutableFloatStateOf(settingsRepository.halfLifeHours.toFloat()) }
     var dailyLimit by remember { mutableFloatStateOf(settingsRepository.dailyLimitMg.toFloat()) }
     var weight by remember { mutableFloatStateOf(settingsRepository.bodyWeightKg) }
-    var darkTheme by remember { mutableStateOf(settingsRepository.isDarkTheme) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -92,16 +89,8 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text("外观", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("深色主题")
-                    Switch(checked = darkTheme, onCheckedChange = {
-                        darkTheme = it; settingsRepository.isDarkTheme = it
-                    })
-                }
+                Text("深色/浅色模式跟随系统", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
         }
     }
