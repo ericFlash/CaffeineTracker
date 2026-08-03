@@ -200,11 +200,11 @@ private fun CaffeineCurve(
 
         // sleep safe threshold line (50mg)
         val safeColor = Color(0xFF4CAF50)
-        val sleepY = size.height * (1f - (CaffeinePharmacokinetics.SLEEP_SAFE_THRESHOLD_MG / maxVal)).toFloat()
+        val sleepY = size.height * (1f - (CaffeinePharmacokinetics.SLEEP_SAFE_MG / maxVal)).toFloat()
         drawLine(safeColor.copy(alpha = 0.5f), Offset(0f, sleepY), Offset(size.width, sleepY),
             strokeWidth = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
         drawContext.canvas.nativeCanvas.drawText(
-            "50mg(睡眠安全)", 4f, sleepY - 4f,
+            "睡眠安全线 50mg", 4f, sleepY - 4f,
             android.graphics.Paint().apply {
                 color = safeColor.hashCode()
                 textSize = 18f
