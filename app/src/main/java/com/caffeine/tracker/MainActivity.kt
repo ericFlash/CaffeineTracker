@@ -119,9 +119,29 @@ fun MainApp(settingsRepository: SettingsRepository) {
             }
             composable(Screen.AddDrink.route) {
                 val vm: AddDrinkViewModel = hiltViewModel()
+                val context = androidx.compose.ui.platform.LocalContext.current
                 AddDrinkScreen(
                     viewModel = vm,
-                    onSaved = { navController.popBackStack() }
+                    onSaved = {
+                        androidx.core.content.ContextCompat.sendBroadcast(
+                            context,
+                            android.content.Intent(
+                                android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                            ).setPackage(context.packageName)
+                                .putExtra(
+                                    android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS,
+                                    android.appwidget.AppWidgetManager
+                                        .getInstance(context)
+                                        .getAppWidgetIds(
+                                            android.content.ComponentName(
+                                                context,
+                                                com.caffeine.tracker.widget.CaffeineWidgetReceiver::class.java
+                                            )
+                                        )
+                                )
+                        )
+                        navController.popBackStack()
+                    }
                 )
             }
             composable(Screen.History.route) {
