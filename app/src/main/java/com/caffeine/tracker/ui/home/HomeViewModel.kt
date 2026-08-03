@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
+import kotlin.math.ln
 
 data class HomeUiState(
     val todayRecords: List<DrinkRecord> = emptyList(),
@@ -21,9 +22,8 @@ data class HomeUiState(
     val totalToday: Double = 0.0,
     val dailyLimit: Double = 400.0,
     val timeToZero: String = "",
-    val curveStartTime: String = "",
-    val curveMidTime: String = "",
-    val curveEndTime: String = "",
+    val curveStartTime: Long = 0L,
+    val curveEndTime: Long = 0L,
 )
 
 @HiltViewModel
@@ -51,24 +51,33 @@ class HomeViewModel @Inject constructor(
             drinkRepository.getRecordsForDay(startOfDay, endOfDay).collect { records ->
                 val halfLife = settingsRepository.halfLifeHours
                 val limit = settingsRepository.dailyLimitMg
-                val curvePoints = CaffeinePharmacokinetics.generateCurve(
-                    records, halfLife, startOfDay, endOfDay
-                )
+
+                val curveStart = if (records.isEmpty()) now
+                    else records.minOf { it.timestamp }
                 val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(
                     records, halfLife, now
                 )
-                val totalToday = records.sumOf { it.caffeineMg }
-                val ttz = CaffeinePharmacokinetics.estimatedTimeToZero(
-                    records, halfLife, now
+                val ttzMs = if (records.isEmpty()) 0L else {
+                    val lambda = ln(2.0) / (halfLife * 3_600_000.0)
+                    val level = currentLevel.coerceAtLeast(0.1)
+                    (ln(level / 0.5) / lambda * 3_600_000.0).toLong().coerceAtLeast(0L)
+                }
+                val latestRecord = records.maxOfOrNull { it.timestamp } ?: now
+                val curveEnd = maxOf(latestRecord + ttzMs, now + 3600_000L)
+                val curveEndClamped = minOf(curveEnd, endOfDay)
+
+                val curvePoints = CaffeinePharmacokinetics.generateCurve(
+                    records, halfLife, curveStart, curveEndClamped
                 )
-                val ttzText = if (ttz <= 0) "已代谢完毕"
-                else {
-                    val hours = ttz / 3_600_000
-                    val mins = (ttz % 3_600_000) / 60_000
-                    "约 ${hours}h${mins}min 后代谢完毕"
+                val totalToday = records.sumOf { it.caffeineMg }
+
+                val ttzText = if (ttzMs <= 0) "已代谢完毕" else {
+                    val hours = ttzMs / 3_600_000
+                    val mins = (ttzMs % 3_600_000) / 60_000
+                    if (hours > 0) "约 ${hours}h${mins}min 后代谢完毕"
+                    else "约 ${mins}min 后代谢完毕"
                 }
 
-                val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                 _uiState.value = HomeUiState(
                     todayRecords = records,
                     curvePoints = curvePoints,
@@ -76,9 +85,8 @@ class HomeViewModel @Inject constructor(
                     totalToday = totalToday,
                     dailyLimit = limit,
                     timeToZero = ttzText,
-                    curveStartTime = sdf.format(java.util.Date(startOfDay)),
-                    curveMidTime = sdf.format(java.util.Date(startOfDay + 43_200_000L)),
-                    curveEndTime = "24:00",
+                    curveStartTime = curveStart,
+                    curveEndTime = curveEndClamped,
                 )
             }
         }
