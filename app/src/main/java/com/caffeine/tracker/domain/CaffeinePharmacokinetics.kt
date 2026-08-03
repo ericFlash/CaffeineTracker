@@ -12,12 +12,19 @@ object CaffeinePharmacokinetics {
         records: List<DrinkRecord>,
         halfLifeHours: Double = 5.0,
         now: Long = System.currentTimeMillis()
+    ): Double = calculateCurrentLevel(records.map { it.caffeineMg }, records.map { it.timestamp }, halfLifeHours, now)
+
+    fun calculateCurrentLevel(
+        caffeineMgs: List<Double>,
+        timestamps: List<Long>,
+        halfLifeHours: Double = 5.0,
+        now: Long = System.currentTimeMillis()
     ): Double {
-        if (records.isEmpty()) return 0.0
+        if (caffeineMgs.isEmpty()) return 0.0
         val lambda = ln(2.0) / (halfLifeHours * 3_600_000.0)
-        return records.sumOf { record ->
-            val elapsedMs = (now - record.timestamp).toDouble().coerceAtLeast(0.0)
-            record.caffeineMg * exp(-lambda * elapsedMs)
+        return caffeineMgs.indices.sumOf { i ->
+            val elapsedMs = (now - timestamps[i]).toDouble().coerceAtLeast(0.0)
+            caffeineMgs[i] * exp(-lambda * elapsedMs)
         }
     }
 
