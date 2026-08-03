@@ -8,6 +8,9 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.caffeine.tracker.MainActivity
 import com.caffeine.tracker.R
+import com.caffeine.tracker.data.local.CaffeineDatabase
+import com.caffeine.tracker.domain.CaffeinePharmacokinetics
+import java.util.Calendar
 
 class CaffeineWidgetReceiver : AppWidgetProvider() {
 
@@ -16,9 +19,24 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        val db = CaffeineDatabase.getInstance(context)
+        val now = System.currentTimeMillis()
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = now
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfDay = cal.timeInMillis
+        val endOfDay = startOfDay + 86_400_000L
+
         val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
-        val currentLevel = prefs.getFloat("widget_current_level", 0f)
-        val totalToday = prefs.getFloat("widget_today_total", 0f)
+        val halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
+
+        val records = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
+        val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(records, halfLife, now)
+        val totalToday = records.sumOf { it.caffeineMg }
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
