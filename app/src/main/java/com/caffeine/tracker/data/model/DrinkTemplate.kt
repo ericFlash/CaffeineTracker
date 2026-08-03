@@ -87,6 +87,11 @@ object DrinkCatalog {
             DrinkSize("杯 (240ml)", 240),
             DrinkSize("大杯 (360ml)", 360),
         )),
+        DrinkTemplate("低因咖啡", "☕", 5.0, 240, listOf(
+            DrinkSize("小杯 (240ml)", 240),
+            DrinkSize("中杯 (355ml)", 355),
+            DrinkSize("大杯 (473ml)", 473),
+        )),
         DrinkTemplate("无咖啡因咖啡", "☕", 3.0, 240, listOf(
             DrinkSize("杯 (240ml)", 240),
             DrinkSize("大杯 (473ml)", 473),
