@@ -38,7 +38,7 @@ object CaffeinePharmacokinetics {
         halfLifeHours: Double,
         startTime: Long,
         endTime: Long,
-        intervalMinutes: Int = 5
+        intervalMinutes: Int = 1
     ): List<CurvePoint> {
         val lambda = ln(2.0) / (halfLifeHours * 3_600_000.0)
         val intervalMs = intervalMinutes * 60_000L
