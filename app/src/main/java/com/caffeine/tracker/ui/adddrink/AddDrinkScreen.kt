@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -157,34 +160,36 @@ private fun DrinkDropdown(
                 query = ""
                 focused = false
             },
-            modifier = Modifier.fillMaxWidth(0.9f)
+            modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 360.dp)
         ) {
-            filtered.forEach { drink ->
-                DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
-                            Column(modifier = Modifier.padding(start = 12.dp)) {
-                                Text(drink.name, fontWeight = FontWeight.Medium)
-                                Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                filtered.forEach { drink ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                                Column(modifier = Modifier.padding(start = 12.dp)) {
+                                    Text(drink.name, fontWeight = FontWeight.Medium)
+                                    Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                }
                             }
+                        },
+                        onClick = {
+                            onDrinkSelected(drink)
+                            expanded = false
+                            query = ""
+                            focused = false
                         }
-                    },
-                    onClick = {
-                        onDrinkSelected(drink)
-                        expanded = false
-                        query = ""
-                        focused = false
-                    }
-                )
-            }
-            if (filtered.isEmpty()) {
-                DropdownMenuItem(
-                    text = { Text("未找到匹配饮品", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
-                    onClick = { }
-                )
+                    )
+                }
+                if (filtered.isEmpty()) {
+                    DropdownMenuItem(
+                        text = { Text("未找到匹配饮品", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                        onClick = { }
+                    )
+                }
             }
         }
     }
