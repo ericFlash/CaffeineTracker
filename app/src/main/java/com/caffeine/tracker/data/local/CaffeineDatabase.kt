@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [DrinkRecord::class], version = 1, exportSchema = false)
+@Database(entities = [DrinkRecord::class], version = 2, exportSchema = false)
 abstract class CaffeineDatabase : RoomDatabase() {
     abstract fun drinkDao(): DrinkDao
 
@@ -19,7 +19,7 @@ abstract class CaffeineDatabase : RoomDatabase() {
                     context.applicationContext,
                     CaffeineDatabase::class.java,
                     "caffeine_tracker.db"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
         }
     }
