@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
@@ -40,101 +41,140 @@ fun AddDrinkScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Text("选择饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
+        Text("添加饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
-        items(state.drinks) { drink ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { viewModel.selectDrink(drink) },
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (state.selectedDrink == drink)
-                        MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(if (state.selectedDrink == drink) 2.dp else 0.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(drink.emoji, fontSize = MaterialTheme.typography.headlineSmall.fontSize)
-                    Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text(drink.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                        Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                    }
-                }
-            }
-        }
+        DrinkDropdown(
+            drinks = state.drinks,
+            selectedDrink = state.selectedDrink,
+            onDrinkSelected = { viewModel.selectDrink(it) }
+        )
 
         if (state.selectedDrink != null) {
-            item {
-                Spacer(Modifier.height(8.dp))
-                SizeDropdown(
-                    sizes = state.selectedDrink!!.sizes.map { it.label },
-                    selectedLabel = if (state.showCustomVolume) "自定义 (${
-                        state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
-                    }ml)"
-                    else state.selectedSize?.label ?: "",
-                    onSizeSelected = { label ->
-                        val drink = state.selectedDrink!!
-                        val match = drink.sizes.find { it.label == label }
-                        if (match != null) viewModel.selectSize(match)
-                    },
-                    onCustomSelected = {
-                        val defaultVol = state.selectedDrink!!.standardVolumeMl
-                        viewModel.setCustomVolume(defaultVol.toString())
-                    }
+            SizeDropdown(
+                sizes = state.selectedDrink!!.sizes.map { it.label },
+                selectedLabel = if (state.showCustomVolume) "自定义 (${
+                    state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
+                }ml)"
+                else state.selectedSize?.label ?: "",
+                onSizeSelected = { label ->
+                    val match = state.selectedDrink!!.sizes.find { it.label == label }
+                    if (match != null) viewModel.selectSize(match)
+                },
+                onCustomSelected = {
+                    val defaultVol = state.selectedDrink!!.standardVolumeMl
+                    viewModel.setCustomVolume(defaultVol.toString())
+                }
+            )
+
+            if (state.showCustomVolume) {
+                OutlinedTextField(
+                    value = state.customVolumeMl,
+                    onValueChange = { viewModel.setCustomVolume(it) },
+                    label = { Text("自定义毫升数") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            if (state.showCustomVolume) {
-                item {
-                    OutlinedTextField(
-                        value = state.customVolumeMl,
-                        onValueChange = { viewModel.setCustomVolume(it) },
-                        label = { Text("自定义毫升数") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                    Text("咖啡因含量", style = MaterialTheme.typography.labelMedium)
+                    Text("%.0f mg".format(state.calculatedCaffeine),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold)
                 }
             }
 
-            item {
-                Spacer(Modifier.height(8.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                        Text("咖啡因含量", style = MaterialTheme.typography.labelMedium)
-                        Text("%.0f mg".format(state.calculatedCaffeine),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold)
-                    }
-                }
+            Button(
+                onClick = {
+                    viewModel.saveRecord()
+                    onSaved()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("记录摄入", modifier = Modifier.padding(8.dp))
             }
+        }
+    }
+}
 
-            item {
-                Button(
-                    onClick = {
-                        viewModel.saveRecord()
-                        onSaved()
+@Composable
+private fun DrinkDropdown(
+    drinks: List<com.caffeine.tracker.data.model.DrinkTemplate>,
+    selectedDrink: com.caffeine.tracker.data.model.DrinkTemplate?,
+    onDrinkSelected: (com.caffeine.tracker.data.model.DrinkTemplate) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+
+    val filtered = if (query.isBlank()) drinks
+        else drinks.filter { it.name.contains(query, ignoreCase = true) }
+
+    Column {
+        Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+
+        OutlinedTextField(
+            value = if (selectedDrink != null && !expanded) "${selectedDrink.emoji} ${selectedDrink.name}" else query,
+            onValueChange = {
+                query = it
+                expanded = true
+            },
+            readOnly = false,
+            singleLine = true,
+            trailingIcon = {
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null,
+                    modifier = Modifier.clickable { expanded = !expanded })
+            },
+            modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+            shape = RoundedCornerShape(12.dp),
+            placeholder = { Text("搜索饮品...") }
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {
+                expanded = false
+                query = ""
+            },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            filtered.forEach { drink ->
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                            Column(modifier = Modifier.padding(start = 12.dp)) {
+                                Text(drink.name, fontWeight = FontWeight.Medium)
+                                Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                            }
+                        }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("记录摄入", modifier = Modifier.padding(8.dp))
-                }
+                    onClick = {
+                        onDrinkSelected(drink)
+                        expanded = false
+                        query = ""
+                    }
+                )
+            }
+            if (filtered.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text("未找到匹配饮品", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                    onClick = { }
+                )
             }
         }
     }
