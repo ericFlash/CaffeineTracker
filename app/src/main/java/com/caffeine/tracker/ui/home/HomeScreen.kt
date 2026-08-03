@@ -106,8 +106,8 @@ private fun HeaderCard(state: HomeUiState) {
                     Text("%.0f mg".format(state.dailyLimit), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 }
                 Column {
-                    Text("状态", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
-                    Text(state.timeToZero, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Text("睡眠安全", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
+                    Text(state.timeToSleepSafe, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -197,6 +197,20 @@ private fun CaffeineCurve(
         val limitY = size.height * (1f - (dailyLimit / maxVal)).toFloat()
         drawLine(limitColor.copy(alpha = 0.5f), Offset(0f, limitY), Offset(size.width, limitY),
             strokeWidth = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
+
+        // sleep safe threshold line (50mg)
+        val safeColor = Color(0xFF4CAF50)
+        val sleepY = size.height * (1f - (CaffeinePharmacokinetics.SLEEP_SAFE_THRESHOLD_MG / maxVal)).toFloat()
+        drawLine(safeColor.copy(alpha = 0.5f), Offset(0f, sleepY), Offset(size.width, sleepY),
+            strokeWidth = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
+        drawContext.canvas.nativeCanvas.drawText(
+            "50mg(睡眠安全)", 4f, sleepY - 4f,
+            android.graphics.Paint().apply {
+                color = safeColor.hashCode()
+                textSize = 18f
+                alpha = 150
+            }
+        )
 
         // curve with cubic bezier smoothing
         if (points.size > 1) {
