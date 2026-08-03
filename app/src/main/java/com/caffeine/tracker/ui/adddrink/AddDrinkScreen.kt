@@ -89,7 +89,12 @@ fun AddDrinkScreen(
                     }
                     FilterChip(
                         selected = state.showCustomVolume,
-                        onClick = { /* stays on custom if set */ },
+                        onClick = {
+                            if (!state.showCustomVolume) {
+                                val defaultVol = state.selectedDrink!!.standardVolumeMl
+                                viewModel.setCustomVolume(defaultVol.toString())
+                            }
+                        },
                         label = { Text("自定义") }
                     )
                 }
