@@ -21,7 +21,7 @@ data class HomeUiState(
     val currentLevel: Double = 0.0,
     val totalToday: Double = 0.0,
     val dailyLimit: Double = 400.0,
-    val timeToZero: String = "",
+    val timeToSleepSafe: String = "",
     val curveStartTime: Long = 0L,
     val curveEndTime: Long = 0L,
 )
@@ -57,13 +57,12 @@ class HomeViewModel @Inject constructor(
                 val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(
                     records, halfLife, now
                 )
-                val ttzMs = if (records.isEmpty()) 0L else {
-                    val lambda = ln(2.0) / (halfLife * 3_600_000.0)
-                    val level = currentLevel.coerceAtLeast(0.1)
-                    (ln(level / 0.5) / lambda * 3_600_000.0).toLong().coerceAtLeast(0L)
-                }
+
+                val sleepTtzMs = CaffeinePharmacokinetics.estimatedTimeToSleepSafe(
+                    records, halfLife, now
+                )
                 val latestRecord = records.maxOfOrNull { it.timestamp } ?: now
-                val curveEnd = maxOf(latestRecord + ttzMs, now + 3600_000L)
+                val curveEnd = maxOf(latestRecord + sleepTtzMs, now + 3600_000L)
                 val curveEndClamped = minOf(curveEnd, endOfDay)
 
                 val curvePoints = CaffeinePharmacokinetics.generateCurve(
@@ -71,11 +70,12 @@ class HomeViewModel @Inject constructor(
                 )
                 val totalToday = records.sumOf { it.caffeineMg }
 
-                val ttzText = if (ttzMs <= 0) "已代谢完毕" else {
-                    val hours = ttzMs / 3_600_000
-                    val mins = (ttzMs % 3_600_000) / 60_000
-                    if (hours > 0) "约 ${hours}h${mins}min 后代谢完毕"
-                    else "约 ${mins}min 后代谢完毕"
+                val timeText = if (sleepTtzMs <= 0) "已低于安全线 ✓"
+                else {
+                    val hours = sleepTtzMs / 3_600_000
+                    val mins = (sleepTtzMs % 3_600_000) / 60_000
+                    if (hours > 0) "约 ${hours}h${mins}min 后可安心入睡"
+                    else "约 ${mins}min 后可安心入睡"
                 }
 
                 _uiState.value = HomeUiState(
@@ -84,7 +84,7 @@ class HomeViewModel @Inject constructor(
                     currentLevel = currentLevel,
                     totalToday = totalToday,
                     dailyLimit = limit,
-                    timeToZero = ttzText,
+                    timeToSleepSafe = timeText,
                     curveStartTime = curveStart,
                     curveEndTime = curveEndClamped,
                 )
