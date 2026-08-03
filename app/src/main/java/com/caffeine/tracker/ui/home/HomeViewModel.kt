@@ -42,7 +42,7 @@ class HomeViewModel @Inject constructor(
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
-                set(Calendar.Millisecond, 0)
+                set(Calendar.MILLISECOND, 0)
             }
             val startOfDay = cal.timeInMillis
             val endOfDay = startOfDay + 86_400_000L
