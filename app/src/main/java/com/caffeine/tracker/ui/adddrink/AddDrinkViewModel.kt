@@ -72,15 +72,17 @@ class AddDrinkViewModel @Inject constructor(
             _uiState.value.selectedSize?.volumeMl ?: drink.standardVolumeMl
         }
         viewModelScope.launch(Dispatchers.IO) {
-            drinkRepository.insert(
-                DrinkRecord(
-                    drinkName = drink.name,
-                    emoji = drink.emoji,
-                    caffeineMg = caffeine,
-                    volumeMl = volume,
-                    timestamp = System.currentTimeMillis(),
+            try {
+                drinkRepository.insert(
+                    DrinkRecord(
+                        drinkName = drink.name,
+                        emoji = drink.emoji,
+                        caffeineMg = caffeine,
+                        volumeMl = volume,
+                        timestamp = System.currentTimeMillis(),
+                    )
                 )
-            )
+            } catch (_: Exception) { }
         }
     }
 }
