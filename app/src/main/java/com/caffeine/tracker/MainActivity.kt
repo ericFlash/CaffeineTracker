@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
         WidgetUpdateWorker.enqueue(this)
 
         setContent {
-            CaffeineTrackerTheme(darkTheme = settingsRepository.isDarkTheme) {
+            CaffeineTrackerTheme {
                 MainApp(settingsRepository)
             }
         }
