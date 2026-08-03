@@ -25,6 +25,7 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
         var currentLevel = 0.0
         var totalToday = 0.0
         var halfLife = 5.0
+        var dailyLimit = 400f
         val hourlyLevels = mutableListOf<Pair<String, Double>>()
         val records = mutableListOf<Pair<Double, Long>>()
 
@@ -43,6 +44,7 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
                 val endOfDay = startOfDay + 86_400_000L
                 val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
                 halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
+                dailyLimit = prefs.getFloat("daily_limit", 400f)
                 val drinkRecords = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
                 records.addAll(drinkRecords.map { it.caffeineMg to it.timestamp })
                 currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(
@@ -67,47 +69,28 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
-            views.setTextViewText(R.id.widget_caffeine_text, "%.0f mg".format(currentLevel))
-            views.setTextViewText(R.id.widget_today_text, "今日: %.0f mg".format(totalToday))
+            views.setTextViewText(R.id.widget_caffeine_text, "%.0f".format(currentLevel))
+            views.setTextViewText(R.id.widget_today_text, "今日 %.0f/%.0f".format(totalToday, dailyLimit))
 
-            // progress bar
-            val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
-            val limit = prefs.getFloat("daily_limit", 400f).toDouble()
-            val pct = (currentLevel / limit * 100).toInt().coerceIn(0, 100)
-            views.setTextViewText(R.id.widget_progress_bar, "$pct%")
-            val progressColor = when {
-                currentLevel > 350 -> R.drawable.card_bg_high
-                currentLevel > 200 -> R.drawable.card_bg_medium
-                else -> R.drawable.card_bg_low
-            }
-            views.setInt(R.id.widget_progress_bar, "setBackgroundResource", progressColor)
-
-            // hourly cards
             hourlyLevels.take(6).forEachIndexed { i, (time, level) ->
-                val cardId = getCardId(i)
-                val timeId = getTimeId(i)
-                val levelTextId = getLevelTextId(i)
+                views.setTextViewText(getTimeId(i), time)
+                views.setTextViewText(getLevelTextId(i), "%.0f".format(level))
 
-                views.setTextViewText(timeId, time)
-                views.setTextViewText(levelTextId, "%.0f mg".format(level))
-
-                val cardBg = when {
-                    level > 350 -> R.drawable.card_bg_high
-                    level > 200 -> R.drawable.card_bg_medium
-                    level > 100 -> R.drawable.card_bg_medium
-                    level > 50 -> R.drawable.card_bg_low
-                    else -> R.drawable.card_bg_low
+                val dotRes = when {
+                    level > 200 -> R.drawable.dot_red
+                    level > 100 -> R.drawable.dot_orange
+                    level > 50 -> R.drawable.dot_yellow
+                    else -> R.drawable.dot_green
                 }
-                views.setInt(cardId, "setBackgroundResource", cardBg)
+                views.setInt(getDotId(i), "setBackgroundResource", dotRes)
 
-                // color the level text based on severity
                 val textColor = when {
-                    level > 200 -> "#FFD32F2F"
-                    level > 100 -> "#FFE65100"
-                    level > 50 -> "#FF388E3C"
-                    else -> "#FF388E3C"
+                    level > 200 -> android.graphics.Color.parseColor("#FFD32F2F")
+                    level > 100 -> android.graphics.Color.parseColor("#FFE65100")
+                    level > 50 -> android.graphics.Color.parseColor("#FFFB8C00")
+                    else -> android.graphics.Color.parseColor("#FF388E3C")
                 }
-                views.setTextColor(levelTextId, android.graphics.Color.parseColor(textColor))
+                views.setTextColor(getLevelTextId(i), textColor)
             }
 
             val intent = Intent(context, MainActivity::class.java)
@@ -120,18 +103,16 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
         }
     }
 
-    private fun getCardId(i: Int): Int = when (i) {
-        0 -> R.id.hour_0; 1 -> R.id.hour_1; 2 -> R.id.hour_2
-        3 -> R.id.hour_3; 4 -> R.id.hour_4; 5 -> R.id.hour_5
-        else -> R.id.hour_0
-    }
-
     private fun getTimeId(i: Int): Int = when (i) {
         0 -> R.id.hour_0_time; 1 -> R.id.hour_1_time; 2 -> R.id.hour_2_time
         3 -> R.id.hour_3_time; 4 -> R.id.hour_4_time; 5 -> R.id.hour_5_time
         else -> R.id.hour_0_time
     }
-
+    private fun getDotId(i: Int): Int = when (i) {
+        0 -> R.id.hour_0_dot; 1 -> R.id.hour_1_dot; 2 -> R.id.hour_2_dot
+        3 -> R.id.hour_3_dot; 4 -> R.id.hour_4_dot; 5 -> R.id.hour_5_dot
+        else -> R.id.hour_0_dot
+    }
     private fun getLevelTextId(i: Int): Int = when (i) {
         0 -> R.id.hour_0_level; 1 -> R.id.hour_1_level; 2 -> R.id.hour_2_level
         3 -> R.id.hour_3_level; 4 -> R.id.hour_4_level; 5 -> R.id.hour_5_level
