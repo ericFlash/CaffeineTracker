@@ -100,29 +100,45 @@ private fun BarChart(
 ) {
     val barColor = MaterialTheme.colorScheme.primary
     val textColor = MaterialTheme.colorScheme.onSurface
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
         val maxVal = data.maxOf { it.totalMg }.coerceAtLeast(1.0)
-        val barWidth = size.width / data.size * 0.7f
-        val gap = size.width / data.size * 0.3f
+        val barWidth = size.width / data.size * 0.65f
+        val gap = size.width / data.size * 0.35f
+        val labelLeft = 40f
+
+        // y-axis labels
+        val yLabelPaint = android.graphics.Paint().apply {
+            color = textColor.hashCode()
+            textSize = 18f
+            alpha = 100
+        }
+        for (i in 0..4) {
+            val yVal = maxVal * (4 - i) / 4
+            val y = size.height * 0.85f * i / 4f
+            drawLine(gridColor, labelLeft, y, size.width, y, strokeWidth = 1f)
+            drawContext.canvas.nativeCanvas.drawText(
+                "%.0f".format(yVal), 2f, y + 5f, yLabelPaint
+            )
+        }
 
         data.forEachIndexed { i, day ->
             val barHeight = (day.totalMg / maxVal * size.height * 0.85f).toFloat()
-            val x = i * (barWidth + gap) + gap / 2
-            val y = size.height - barHeight
+            val x = labelLeft + i * (barWidth + gap) + gap / 2
+            val y = size.height * 0.85f - barHeight
             drawRect(barColor, Offset(x, y), Size(barWidth, barHeight),
                 alpha = 0.3f + 0.7f * (day.totalMg / maxVal).toFloat())
 
-            // draw label every 5 items for month view
             if (data.size <= 7 || i % 5 == 0) {
                 drawContext.canvas.nativeCanvas.drawText(
                     day.date,
-                    x + barWidth / 2 - 10f,
+                    x + barWidth / 2 - 12f,
                     size.height - 2f,
                     android.graphics.Paint().apply {
                         color = textColor.hashCode()
-                        textSize = 18f
+                        textSize = 16f
                         alpha = 120
                     }
                 )
