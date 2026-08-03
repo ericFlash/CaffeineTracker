@@ -33,7 +33,7 @@ class HistoryViewModel @Inject constructor(
 
     fun deleteRecord(record: DrinkRecord) {
         viewModelScope.launch(Dispatchers.IO) {
-            drinkRepository.delete(record)
+            try { drinkRepository.delete(record) } catch (_: Exception) { }
         }
     }
 }
