@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
-import kotlin.math.ln
+import com.caffeine.tracker.domain.CaffeinePharmacokinetics.SLEEP_SAFE_MG
 
 data class HomeUiState(
     val todayRecords: List<DrinkRecord> = emptyList(),
