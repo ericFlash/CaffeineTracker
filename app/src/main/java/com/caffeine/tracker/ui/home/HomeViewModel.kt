@@ -63,10 +63,9 @@ class HomeViewModel @Inject constructor(
                 )
                 val latestRecord = records.maxOfOrNull { it.timestamp } ?: now
                 val curveEnd = maxOf(latestRecord + sleepTtzMs, now + 3600_000L)
-                val curveEndClamped = minOf(curveEnd, endOfDay)
 
                 val curvePoints = CaffeinePharmacokinetics.generateCurve(
-                    records, halfLife, curveStart, curveEndClamped
+                    records, halfLife, curveStart, curveEnd
                 )
                 val totalToday = records.sumOf { it.caffeineMg }
 
@@ -86,7 +85,7 @@ class HomeViewModel @Inject constructor(
                     dailyLimit = limit,
                     timeToSleepSafe = timeText,
                     curveStartTime = curveStart,
-                    curveEndTime = curveEndClamped,
+                    curveEndTime = curveEnd,
                 )
             }
         }
