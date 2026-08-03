@@ -9,9 +9,7 @@ import com.caffeine.tracker.domain.CaffeinePharmacokinetics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -23,6 +21,9 @@ data class HomeUiState(
     val totalToday: Double = 0.0,
     val dailyLimit: Double = 400.0,
     val timeToZero: String = "",
+    val curveStartTime: String = "",
+    val curveMidTime: String = "",
+    val curveEndTime: String = "",
 )
 
 @HiltViewModel
@@ -66,6 +67,8 @@ class HomeViewModel @Inject constructor(
                     val mins = (ttz % 3_600_000) / 60_000
                     "约 ${hours}h${mins}min 后代谢完毕"
                 }
+
+                val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                 _uiState.value = HomeUiState(
                     todayRecords = records,
                     curvePoints = curvePoints,
@@ -73,6 +76,9 @@ class HomeViewModel @Inject constructor(
                     totalToday = totalToday,
                     dailyLimit = limit,
                     timeToZero = ttzText,
+                    curveStartTime = sdf.format(java.util.Date(startOfDay)),
+                    curveMidTime = sdf.format(java.util.Date(startOfDay + 43_200_000L)),
+                    curveEndTime = "24:00",
                 )
             }
         }
