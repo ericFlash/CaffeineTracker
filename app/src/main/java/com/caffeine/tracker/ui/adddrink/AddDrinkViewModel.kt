@@ -75,6 +75,7 @@ class AddDrinkViewModel @Inject constructor(
             drinkRepository.insert(
                 DrinkRecord(
                     drinkName = drink.name,
+                    emoji = drink.emoji,
                     caffeineMg = caffeine,
                     volumeMl = volume,
                     timestamp = System.currentTimeMillis(),
