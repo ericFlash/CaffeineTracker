@@ -5,11 +5,12 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.database.sqlite.SQLiteDatabase
 import android.widget.RemoteViews
 import com.caffeine.tracker.MainActivity
 import com.caffeine.tracker.R
+import com.caffeine.tracker.data.local.CaffeineDatabase
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
+import kotlinx.coroutines.runBlocking
 import java.util.Calendar
 
 class CaffeineWidgetReceiver : AppWidgetProvider() {
@@ -23,45 +24,24 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
         var totalToday = 0.0
 
         try {
-            val now = System.currentTimeMillis()
-            val cal = Calendar.getInstance().apply {
-                timeInMillis = now
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+            runBlocking {
+                val db = CaffeineDatabase.getInstance(context)
+                val now = System.currentTimeMillis()
+                val cal = Calendar.getInstance().apply {
+                    timeInMillis = now
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOfDay = cal.timeInMillis
+                val endOfDay = startOfDay + 86_400_000L
+                val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
+                val halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
+                val records = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
+                currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(records, halfLife, now)
+                totalToday = records.sumOf { it.caffeineMg }
             }
-            val startOfDay = cal.timeInMillis
-            val endOfDay = startOfDay + 86_400_000L
-            val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
-            val halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
-
-            val db = SQLiteDatabase.openDatabase(
-                context.getDatabasePath("caffeine_tracker.db").absolutePath,
-                null,
-                SQLiteDatabase.OPEN_READONLY
-            )
-
-            val cursor = db.rawQuery(
-                "SELECT caffeineMg, timestamp FROM drink_records WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC",
-                arrayOf(startOfDay.toString(), endOfDay.toString())
-            )
-
-            val records = mutableListOf<Pair<Double, Long>>()
-            var sum = 0.0
-            while (cursor.moveToNext()) {
-                val mg = cursor.getDouble(0)
-                val ts = cursor.getLong(1)
-                records.add(mg to ts)
-                sum += mg
-            }
-            cursor.close()
-            db.close()
-
-            currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(
-                records.map { it.first }, records.map { it.second }, halfLife, now
-            )
-            totalToday = sum
         } catch (_: Exception) {
             val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
             currentLevel = prefs.getFloat("widget_current_level", 0f).toDouble()
