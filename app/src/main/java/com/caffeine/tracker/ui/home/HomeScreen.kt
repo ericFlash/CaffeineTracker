@@ -148,6 +148,7 @@ private fun CaffeineCurve(
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val textColor = MaterialTheme.colorScheme.onSurface
     val surfaceColor = MaterialTheme.colorScheme.surface
+    val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
 
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
@@ -167,6 +168,21 @@ private fun CaffeineCurve(
                     textSize = 20f
                     alpha = 100
                 }
+            )
+        }
+
+        // time labels on x-axis
+        val timeLabelPaint = android.graphics.Paint().apply {
+            color = textColor.hashCode()
+            textSize = 18f
+            alpha = 120
+        }
+        val timeLabels = listOf(minTime, minTime + (maxTime - minTime) / 2, maxTime)
+        timeLabels.forEach { time ->
+            val x = ((time - minTime) / timeRange * size.width)
+            val label = sdf.format(java.util.Date(time))
+            drawContext.canvas.nativeCanvas.drawText(
+                label, x - 15f, size.height - 4f, timeLabelPaint
             )
         }
 
