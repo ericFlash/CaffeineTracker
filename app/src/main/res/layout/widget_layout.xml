@@ -3,26 +3,128 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
     android:padding="12dp"
     android:background="@drawable/widget_bg">
 
-    <TextView
-        android:id="@+id/widget_caffeine_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0 mg"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black" />
+    <!-- Top row: current level + progress bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/widget_today_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="今日: 0 mg"
-        android:textSize="14sp"
-        android:textColor="#666666" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_caffeine_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 mg"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:id="@+id/widget_today_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="今日: 0 mg"
+                android:textSize="12sp"
+                android:textColor="#888888" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_progress_bar"
+            android:layout_width="0dp"
+            android:layout_height="16dp"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:gravity="center"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/widget_bg" />
+    </LinearLayout>
+
+    <!-- Bottom row: 6 hour cards -->
+    <LinearLayout
+        android:id="@+id/widget_hour_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:weightSum="6">
+
+        <LinearLayout android:id="@+id/hour_0" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center"
+            android:padding="2dp" android:layout_margin="1dp" android:background="@drawable/card_bg_low">
+            <TextView android:id="@+id/hour_0_time" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="10sp"
+                android:textColor="#666666" />
+            <TextView android:id="@+id/hour_0_level" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/hour_1" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center"
+            android:padding="2dp" android:layout_margin="1dp" android:background="@drawable/card_bg_low">
+            <TextView android:id="@+id/hour_1_time" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="10sp"
+                android:textColor="#666666" />
+            <TextView android:id="@+id/hour_1_level" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/hour_2" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center"
+            android:padding="2dp" android:layout_margin="1dp" android:background="@drawable/card_bg_low">
+            <TextView android:id="@+id/hour_2_time" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="10sp"
+                android:textColor="#666666" />
+            <TextView android:id="@+id/hour_2_level" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/hour_3" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center"
+            android:padding="2dp" android:layout_margin="1dp" android:background="@drawable/card_bg_low">
+            <TextView android:id="@+id/hour_3_time" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="10sp"
+                android:textColor="#666666" />
+            <TextView android:id="@+id/hour_3_level" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/hour_4" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center"
+            android:padding="2dp" android:layout_margin="1dp" android:background="@drawable/card_bg_low">
+            <TextView android:id="@+id/hour_4_time" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="10sp"
+                android:textColor="#666666" />
+            <TextView android:id="@+id/hour_4_level" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/hour_5" android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center"
+            android:padding="2dp" android:layout_margin="1dp" android:background="@drawable/card_bg_low">
+            <TextView android:id="@+id/hour_5_time" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="10sp"
+                android:textColor="#666666" />
+            <TextView android:id="@+id/hour_5_level" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="--" android:textSize="14sp"
+                android:textStyle="bold" android:textColor="@android:color/black" />
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>
