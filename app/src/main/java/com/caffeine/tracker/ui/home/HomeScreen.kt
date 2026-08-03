@@ -171,19 +171,21 @@ private fun CaffeineCurve(
             )
         }
 
-        // time labels on x-axis
+        // time labels on x-axis (every 4 hours)
         val timeLabelPaint = android.graphics.Paint().apply {
             color = textColor.hashCode()
-            textSize = 18f
-            alpha = 120
+            textSize = 16f
+            alpha = 140
+            textAlign = android.graphics.Paint.Align.CENTER
         }
-        val timeLabels = listOf(minTime, minTime + (maxTime - minTime) / 2, maxTime)
-        timeLabels.forEach { time ->
-            val x = ((time - minTime) / timeRange * size.width)
-            val label = sdf.format(java.util.Date(time))
+        val fourHoursMs = 14_400_000L
+        var t = minTime + fourHoursMs
+        while (t < maxTime) {
+            val x = ((t - minTime) / timeRange * size.width)
             drawContext.canvas.nativeCanvas.drawText(
-                label, x - 15f, size.height - 4f, timeLabelPaint
+                sdf.format(java.util.Date(t)), x, size.height - 4f, timeLabelPaint
             )
+            t += fourHoursMs
         }
 
         // limit line
