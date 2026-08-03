@@ -147,6 +147,7 @@ private fun CaffeineCurve(
     val limitColor = MaterialTheme.colorScheme.error
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val textColor = MaterialTheme.colorScheme.onSurface
+    val surfaceColor = MaterialTheme.colorScheme.surface
 
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
@@ -208,7 +209,7 @@ private fun CaffeineCurve(
                     val x = ((pt.timestamp - minTime) / timeRange * size.width)
                     val y = size.height * (1f - (pt.level / maxVal)).toFloat()
                     drawCircle(lineColor, radius = 5f, center = Offset(x, y))
-                    drawCircle(MaterialTheme.colorScheme.surface, radius = 3f, center = Offset(x, y))
+                    drawCircle(surfaceColor, radius = 3f, center = Offset(x, y))
                 }
             }
         }
