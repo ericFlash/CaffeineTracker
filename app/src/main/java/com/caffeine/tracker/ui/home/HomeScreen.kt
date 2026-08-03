@@ -230,9 +230,14 @@ private fun CaffeineCurve(
             for (i in 1 until pts.size) {
                 val prev = pts[i - 1]
                 val curr = pts[i]
-                val cx1 = prev.x + (curr.x - prev.x) / 3f
-                val cx2 = prev.x + (curr.x - prev.x) * 2f / 3f
-                path.cubicTo(cx1, prev.y, cx2, curr.y, curr.x, curr.y)
+                val prevPrev = if (i >= 2) pts[i - 2] else prev
+                val next = if (i < pts.size - 1) pts[i + 1] else curr
+                val tension = 0.25f
+                val cx1 = prev.x + (curr.x - prevPrev.x) * tension
+                val cy1 = prev.y + (curr.y - prevPrev.y) * tension
+                val cx2 = curr.x - (next.x - prev.x) * tension
+                val cy2 = curr.y - (next.y - prev.y) * tension
+                path.cubicTo(cx1, cy1, cx2, cy2, curr.x, curr.y)
             }
             drawPath(path, lineColor, style = Stroke(width = 3f, cap = StrokeCap.Round))
 
