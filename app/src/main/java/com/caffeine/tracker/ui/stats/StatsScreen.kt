@@ -185,11 +185,7 @@ private fun LineChart(
             val path = Path().apply {
                 moveTo(pts[0].x, pts[0].y)
                 for (i in 1 until pts.size) {
-                    val prev = pts[i - 1]; val curr = pts[i]
-                    val pp = if (i >= 2) pts[i - 2] else prev
-                    val n = if (i < pts.size - 1) pts[i + 1] else curr
-                    val t = 0.25f
-                    lineTo(curr.x, curr.y)
+                    lineTo(pts[i].x, pts[i].y)
                 }
             }
             drawPath(path, lineColor, style = Stroke(width = 2.5f, cap = StrokeCap.Round))
