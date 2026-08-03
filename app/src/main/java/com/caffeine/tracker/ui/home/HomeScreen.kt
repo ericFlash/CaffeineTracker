@@ -258,6 +258,8 @@ private fun TodayRecordsList(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    modifier = Modifier.padding(end = 12.dp))
                 Column {
                     Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                     Text("%.0f mg | %dml".format(record.caffeineMg, record.volumeMl),
