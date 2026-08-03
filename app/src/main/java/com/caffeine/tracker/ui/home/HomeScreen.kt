@@ -130,6 +130,8 @@ private fun CurveCard(state: HomeUiState) {
                 CaffeineCurve(
                     points = state.curvePoints,
                     dailyLimit = state.dailyLimit,
+                    curveStartTime = state.curveStartTime,
+                    curveEndTime = state.curveEndTime,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -141,6 +143,8 @@ private fun CurveCard(state: HomeUiState) {
 private fun CaffeineCurve(
     points: List<CaffeinePharmacokinetics.CurvePoint>,
     dailyLimit: Double,
+    curveStartTime: Long = 0L,
+    curveEndTime: Long = 0L,
     modifier: Modifier = Modifier
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
@@ -154,7 +158,9 @@ private fun CaffeineCurve(
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
         val minTime = points.first().timestamp
         val maxTime = points.last().timestamp
-        val timeRange = (maxTime - minTime).toFloat().coerceAtLeast(1f)
+        val displayStart = minOf(minTime, curveStartTime)
+        val displayEnd = maxOf(maxTime, curveEndTime)
+        val timeRange = (displayEnd - displayStart).toFloat().coerceAtLeast(1f)
 
         // grid lines
         for (i in 0..4) {
@@ -171,21 +177,20 @@ private fun CaffeineCurve(
             )
         }
 
-        // time labels on x-axis (every 4 hours)
+        // time labels on x-axis (evenly spaced, 4-6 ticks)
         val timeLabelPaint = android.graphics.Paint().apply {
             color = textColor.hashCode()
             textSize = 16f
             alpha = 140
             textAlign = android.graphics.Paint.Align.CENTER
         }
-        val fourHoursMs = 14_400_000L
-        var t = minTime + fourHoursMs
-        while (t < maxTime) {
-            val x = ((t - minTime) / timeRange * size.width)
+        val tickCount = 5
+        for (i in 0..tickCount) {
+            val t = displayStart + ((displayEnd - displayStart) * i / tickCount)
+            val x = ((t - displayStart) / timeRange * size.width)
             drawContext.canvas.nativeCanvas.drawText(
                 sdf.format(java.util.Date(t)), x, size.height - 4f, timeLabelPaint
             )
-            t += fourHoursMs
         }
 
         // limit line
@@ -197,7 +202,7 @@ private fun CaffeineCurve(
         if (points.size > 1) {
             val path = Path()
             val pts = points.map { pt ->
-                val x = ((pt.timestamp - minTime) / timeRange * size.width)
+                val x = ((pt.timestamp - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
                 val y = size.height * (1f - (pt.level / maxVal)).toFloat()
                 Offset(x, y)
             }
@@ -224,7 +229,7 @@ private fun CaffeineCurve(
             val drawnTimes = mutableSetOf<Long>()
             points.forEach { pt ->
                 if (pt.level > 0.5 && drawnTimes.add(pt.timestamp / 60_000)) {
-                    val x = ((pt.timestamp - minTime) / timeRange * size.width)
+                    val x = ((pt.timestamp - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
                     val y = size.height * (1f - (pt.level / maxVal)).toFloat()
                     drawCircle(lineColor, radius = 5f, center = Offset(x, y))
                     drawCircle(surfaceColor, radius = 3f, center = Offset(x, y))
