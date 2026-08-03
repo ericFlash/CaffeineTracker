@@ -12,11 +12,9 @@
 
     <!-- Coffee cup handle -->
     <path
-        android:fillColor="#FFFFFF"
         android:pathData="M70,50 C77,50 82,56 82,62 C82,68 77,74 70,74"
         android:strokeWidth="3.5"
-        android:strokeColor="#FFFFFF"
-        android:fillColor="@android:color/transparent" />
+        android:strokeColor="#FFFFFF" />
 
     <!-- Coffee liquid surface -->
     <path
