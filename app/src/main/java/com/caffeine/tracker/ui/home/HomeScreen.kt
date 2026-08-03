@@ -174,25 +174,42 @@ private fun CaffeineCurve(
         drawLine(limitColor.copy(alpha = 0.5f), Offset(0f, limitY), Offset(size.width, limitY),
             strokeWidth = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
 
-        // curve
+        // curve with cubic bezier smoothing
         if (points.size > 1) {
             val path = Path()
-            points.forEachIndexed { i, pt ->
+            val pts = points.map { pt ->
                 val x = ((pt.timestamp - minTime) / timeRange * size.width)
                 val y = size.height * (1f - (pt.level / maxVal)).toFloat()
-                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                Offset(x, y)
+            }
+            path.moveTo(pts[0].x, pts[0].y)
+            for (i in 1 until pts.size) {
+                val prev = pts[i - 1]
+                val curr = pts[i]
+                val cx1 = prev.x + (curr.x - prev.x) / 3f
+                val cx2 = prev.x + (curr.x - prev.x) * 2f / 3f
+                path.cubicTo(cx1, prev.y, cx2, curr.y, curr.x, curr.y)
             }
             drawPath(path, lineColor, style = Stroke(width = 3f, cap = StrokeCap.Round))
 
-            // dots for drink records
-            val recordTimes = points.filter { pt ->
-                points.any { it.timestamp == pt.timestamp && it.level > 0 }
+            // gradient fill under curve
+            val fillPath = Path().apply {
+                addPath(path)
+                lineTo(pts.last().x, size.height)
+                lineTo(pts.first().x, size.height)
+                close()
             }
-            // simpler: draw dots for non-zero points that stand out
-            points.filter { it.level > 0 && it.timestamp % (10 * 60_000) == 0L }.forEach { pt ->
-                val x = ((pt.timestamp - minTime) / timeRange * size.width)
-                val y = size.height * (1f - (pt.level / maxVal)).toFloat()
-                drawCircle(lineColor, radius = 4f, center = Offset(x, y))
+            drawPath(fillPath, lineColor.copy(alpha = 0.08f))
+
+            // dots for drink records
+            val drawnTimes = mutableSetOf<Long>()
+            points.forEach { pt ->
+                if (pt.level > 0.5 && drawnTimes.add(pt.timestamp / 60_000)) {
+                    val x = ((pt.timestamp - minTime) / timeRange * size.width)
+                    val y = size.height * (1f - (pt.level / maxVal)).toFloat()
+                    drawCircle(lineColor, radius = 5f, center = Offset(x, y))
+                    drawCircle(MaterialTheme.colorScheme.surface, radius = 3f, center = Offset(x, y))
+                }
             }
         }
     }
