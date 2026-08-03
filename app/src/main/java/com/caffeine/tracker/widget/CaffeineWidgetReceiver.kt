@@ -71,12 +71,13 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_today_text, "今日: %.0f mg".format(totalToday))
 
             // progress bar
-            val limit = 400.0
+            val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
+            val limit = prefs.getFloat("daily_limit", 400f).toDouble()
             val pct = (currentLevel / limit * 100).toInt().coerceIn(0, 100)
             views.setTextViewText(R.id.widget_progress_bar, "$pct%")
             val progressColor = when {
-                pct >= 90 -> R.drawable.card_bg_high
-                pct >= 50 -> R.drawable.card_bg_medium
+                currentLevel > 350 -> R.drawable.card_bg_high
+                currentLevel > 200 -> R.drawable.card_bg_medium
                 else -> R.drawable.card_bg_low
             }
             views.setInt(R.id.widget_progress_bar, "setBackgroundResource", progressColor)
@@ -88,15 +89,7 @@ class CaffeineWidgetReceiver : AppWidgetProvider() {
                 val levelTextId = getLevelTextId(i)
 
                 views.setTextViewText(timeId, time)
-                val levelLabel = when {
-                    level > 350 -> "%.0f".format(level)
-                    level > 200 -> "%.0f".format(level)
-                    level > 100 -> "%.0f".format(level)
-                    level > 50 -> "%.0f".format(level)
-                    level > 10 -> "%.0f".format(level)
-                    else -> "%.0f".format(level)
-                }
-                views.setTextViewText(levelTextId, "${levelLabel}mg")
+                views.setTextViewText(levelTextId, "%.0f mg".format(level))
 
                 val cardBg = when {
                     level > 350 -> R.drawable.card_bg_high
