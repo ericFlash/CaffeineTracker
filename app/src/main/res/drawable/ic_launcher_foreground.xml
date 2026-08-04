@@ -5,37 +5,57 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Background circle accent -->
+    <!-- Rounded coffee cup body (smooth, Starbucks-like) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,54 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0" />
+        android:fillColor="#FFF6EF"
+        android:pathData="M37,40 C37,40 36,74 54,84 C72,74 71,40 71,40 Z" />
 
-    <!-- Coffee cup (filled, rounded) -->
-    <path
-        android:fillColor="#6F4E37"
-        android:pathData="M40,42 L40,70 C40,78.3 46.7,85 55,85 C63.3,85 70,78.3 70,70 L70,42 Z" />
-
-    <!-- Cup handle -->
+    <!-- Cup rim -->
     <path
         android:fillColor="#6F4E37"
-        android:pathData="M70,52 C81,50 84,58 81,64 C78,71 70,72 68,70 C71,74 80,70 82,63 C84,55 78,48 68,51 Z" />
+        android:pathData="M33,38 Q54,46 75,38 L74,34 Q54,42 34,34 Z" />
 
-    <!-- Coffee liquid surface with wave -->
-    <path
-        android:fillColor="#D4A574"
-        android:pathData="M43,52 Q49,48 55,52 T67,52 L67,56 Q61,60 55,56 T43,56 Z" />
-
-    <!-- Coffee bean on right of cup -->
-    <path
-        android:fillColor="#4CAF50"
-        android:pathData="M26,34 m-7,0 a7,10 0 1,1 14,0 a7,10 0 1,1 -14,0" />
-
-    <!-- Bean crease -->
+    <!-- Cup body outline -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeWidth="1.6"
-        android:strokeColor="#1B5E20"
-        android:pathData="M26,25 Q29,34 26,43"
+        android:strokeWidth="3"
+        android:strokeColor="#6F4E37"
+        android:pathData="M37,40 C37,40 36,74 54,84 C72,74 71,40 71,40 Z"
+        android:strokeLineJoin="round" />
+
+    <!-- Smooth handle -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeWidth="4"
+        android:strokeColor="#6F4E37"
+        android:pathData="M71,48 C84,48 88,62 77,70 C73,72.5 69,72.5"
+        android:strokeLineCap="round" />
+
+    <!-- Coffee liquid with gentle wave -->
+    <path
+        android:fillColor="#C89A6B"
+        android:pathData="M41,50 Q47,46 54,50 T67,50 L67,52 Q60,55 54,52 T41,52 Z" />
+
+    <!-- Steam curls (smooth, rounded) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeWidth="2.5"
+        android:strokeColor="#6F4E37"
+        android:pathData="M46,31 C44,27 48,24 46,20 C45,18 46,17 48,17"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeWidth="2.5"
+        android:strokeColor="#6F4E37"
+        android:pathData="M55,29 C53,25 57,22 55,18 C54,16 55,15 57,15"
+        android:strokeLineCap="round" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeWidth="2.5"
+        android:strokeColor="#6F4E37"
+        android:pathData="M63,31 C61,27 65,24 63,20 C62,18 63,17 65,17"
         android:strokeLineCap="round" />
 
 </vector>
