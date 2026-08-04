@@ -1,6 +1,8 @@
 package com.caffeine.tracker.ui.adddrink
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,9 +21,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -112,7 +113,6 @@ fun AddDrinkScreen(
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun DrinkDropdown(
     drinks: List<com.caffeine.tracker.data.model.DrinkTemplate>,
@@ -120,76 +120,61 @@ private fun DrinkDropdown(
     onDrinkSelected: (com.caffeine.tracker.data.model.DrinkTemplate) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var query by remember { mutableStateOf("") }
 
-    val filtered = if (query.isBlank()) drinks
-        else drinks.filter { it.name.contains(query, ignoreCase = true) }
+    val displayText = selectedDrink?.let { "${it.emoji} ${it.name}" } ?: "点击选择饮品"
 
     Column {
         Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
 
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
-        ) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = true }
+            .padding(bottom = 4.dp, top = 4.dp)) {
             OutlinedTextField(
-                value = if (selectedDrink != null && query.isBlank())
-                    "${selectedDrink.emoji} ${selectedDrink.name}" else query,
-                onValueChange = {
-                    query = it
-                    expanded = true
-                },
+                value = displayText,
+                onValueChange = {},
+                readOnly = true,
                 singleLine = true,
-                placeholder = { Text("点击选择饮品...") },
                 trailingIcon = {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = "选择",
+                        modifier = Modifier.clickable { expanded = true })
                 },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.heightIn(max = 320.dp)
-            ) {
-                if (filtered.isEmpty()) {
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 320.dp)
+        ) {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(drinks, key = { it.name }) { drink ->
                     DropdownMenuItem(
-                        text = { Text("未找到匹配饮品", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
-                        onClick = { }
-                    )
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(filtered, key = { it.name }) { drink ->
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
-                                        Column(modifier = Modifier.padding(start = 12.dp)) {
-                                            Text(drink.name, fontWeight = FontWeight.Medium)
-                                            Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                                        }
-                                    }
-                                },
-                                onClick = {
-                                    onDrinkSelected(drink)
-                                    expanded = false
-                                    query = ""
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                                Column(modifier = Modifier.padding(start = 12.dp)) {
+                                    Text(drink.name, fontWeight = FontWeight.Medium)
+                                    Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                                 }
-                            )
+                            }
+                        },
+                        onClick = {
+                            onDrinkSelected(drink)
+                            expanded = false
                         }
-                    }
+                    )
                 }
             }
         }
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun SizeDropdown(
     sizes: List<String>,
@@ -203,44 +188,45 @@ private fun SizeDropdown(
         Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
 
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
-        ) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = true }
+            .padding(bottom = 4.dp, top = 4.dp)) {
             OutlinedTextField(
                 value = selectedLabel,
                 onValueChange = {},
                 readOnly = true,
+                singleLine = true,
                 trailingIcon = {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = "选择",
+                        modifier = Modifier.clickable { expanded = true })
                 },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.heightIn(max = 320.dp)
-            ) {
-                sizes.forEach { label ->
-                    DropdownMenuItem(
-                        text = { Text(label) },
-                        onClick = {
-                            onSizeSelected(label)
-                            expanded = false
-                        }
-                    )
-                }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 320.dp)
+        ) {
+            sizes.forEach { label ->
                 DropdownMenuItem(
-                    text = { Text("自定义", fontWeight = FontWeight.Medium) },
+                    text = { Text(label) },
                     onClick = {
-                        onCustomSelected()
+                        onSizeSelected(label)
                         expanded = false
                     }
                 )
             }
+            DropdownMenuItem(
+                text = { Text("自定义", fontWeight = FontWeight.Medium) },
+                onClick = {
+                    onCustomSelected()
+                    expanded = false
+                }
+            )
         }
     }
 }
