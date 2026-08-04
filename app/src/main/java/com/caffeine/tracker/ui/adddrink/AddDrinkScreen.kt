@@ -254,5 +254,3 @@ private fun PickerField(
         }
     }
 }
-    }
-}
