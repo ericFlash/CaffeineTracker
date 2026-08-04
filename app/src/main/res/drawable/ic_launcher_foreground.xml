@@ -5,44 +5,37 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Coffee cup body -->
+    <!-- Background circle accent -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M38,42 L38,70 C38,77.2 43.8,83 51,83 L57,83 C64.2,83 70,77.2 70,70 L70,42 Z" />
+        android:pathData="M54,54 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0" />
 
-    <!-- Coffee cup handle -->
+    <!-- Coffee cup (filled, rounded) -->
     <path
-        android:pathData="M70,50 C77,50 82,56 82,62 C82,68 77,74 70,74"
-        android:strokeWidth="3.5"
-        android:strokeColor="#FFFFFF" />
+        android:fillColor="#6F4E37"
+        android:pathData="M40,42 L40,70 C40,78.3 46.7,85 55,85 C63.3,85 70,78.3 70,70 L70,42 Z" />
 
-    <!-- Coffee liquid surface -->
+    <!-- Cup handle -->
+    <path
+        android:fillColor="#6F4E37"
+        android:pathData="M70,52 C81,50 84,58 81,64 C78,71 70,72 68,70 C71,74 80,70 82,63 C84,55 78,48 68,51 Z" />
+
+    <!-- Coffee liquid surface with wave -->
     <path
         android:fillColor="#D4A574"
-        android:pathData="M42,52 L66,52 L66,54 C66,54 54,57 42,54 Z" />
+        android:pathData="M43,52 Q49,48 55,52 T67,52 L67,56 Q61,60 55,56 T43,56 Z" />
 
-    <!-- Steam line 1 -->
+    <!-- Coffee bean on right of cup -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M26,34 m-7,0 a7,10 0 1,1 14,0 a7,10 0 1,1 -14,0" />
+
+    <!-- Bean crease -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeWidth="2"
-        android:strokeColor="#FFFFFF"
-        android:pathData="M47,38 C47,34 49,32 49,28"
-        android:strokeLineCap="round" />
-
-    <!-- Steam line 2 -->
-    <path
-        android:fillColor="@android:color/transparent"
-        android:strokeWidth="2"
-        android:strokeColor="#FFFFFF"
-        android:pathData="M54,36 C54,32 56,30 56,26"
-        android:strokeLineCap="round" />
-
-    <!-- Steam line 3 -->
-    <path
-        android:fillColor="@android:color/transparent"
-        android:strokeWidth="2"
-        android:strokeColor="#FFFFFF"
-        android:pathData="M61,38 C61,34 63,32 63,28"
+        android:strokeWidth="1.6"
+        android:strokeColor="#1B5E20"
+        android:pathData="M26,25 Q29,34 26,43"
         android:strokeLineCap="round" />
 
 </vector>
