@@ -5,57 +5,47 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Rounded coffee cup body (smooth, Starbucks-like) -->
+    <!-- Rounded white base plate (centered in safe zone) -->
     <path
-        android:fillColor="#FFF6EF"
-        android:pathData="M37,40 C37,40 36,74 54,84 C72,74 71,40 71,40 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,78 m-26,0 a26,8 0 1,1 52,0 a26,8 0 1,1 -52,0" />
+
+    <!-- Coffee cup body - slim, centered, inside safe area (30-78) -->
+    <path
+        android:fillColor="#6F4E37"
+        android:pathData="M41,46 L41,64 C41,69.4 46.5,74.5 54,74.5 C61.5,74.5 67,69.4 67,64 L67,46 Z" />
+
+    <!-- Coffee liquid -->
+    <path
+        android:fillColor="#C89A6B"
+        android:pathData="M43,50 Q48,47 54,50 T65,50 L65,52 Q59,54 54,52 T43,52 Z" />
 
     <!-- Cup rim -->
     <path
-        android:fillColor="#6F4E37"
-        android:pathData="M33,38 Q54,46 75,38 L74,34 Q54,42 34,34 Z" />
-
-    <!-- Cup body outline -->
-    <path
-        android:fillColor="@android:color/transparent"
-        android:strokeWidth="3"
-        android:strokeColor="#6F4E37"
-        android:pathData="M37,40 C37,40 36,74 54,84 C72,74 71,40 71,40 Z"
-        android:strokeLineJoin="round" />
+        android:fillColor="#5A4030"
+        android:pathData="M39,46 L69,46 L69,48 L39,48 Z" />
 
     <!-- Smooth handle -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeWidth="4"
+        android:strokeWidth="3.5"
         android:strokeColor="#6F4E37"
-        android:pathData="M71,48 C84,48 88,62 77,70 C73,72.5 69,72.5"
+        android:pathData="M67,50 C74,50 76,58 72,63 C69,66 66,66"
         android:strokeLineCap="round" />
 
-    <!-- Coffee liquid with gentle wave -->
-    <path
-        android:fillColor="#C89A6B"
-        android:pathData="M41,50 Q47,46 54,50 T67,50 L67,52 Q60,55 54,52 T41,52 Z" />
-
-    <!-- Steam curls (smooth, rounded) -->
+    <!-- Steam curls -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeWidth="2.5"
         android:strokeColor="#6F4E37"
-        android:pathData="M46,31 C44,27 48,24 46,20 C45,18 46,17 48,17"
+        android:pathData="M49,41 C47,37 51,34 49,30 C48,28 49,27 51,27"
         android:strokeLineCap="round" />
 
     <path
         android:fillColor="@android:color/transparent"
         android:strokeWidth="2.5"
         android:strokeColor="#6F4E37"
-        android:pathData="M55,29 C53,25 57,22 55,18 C54,16 55,15 57,15"
-        android:strokeLineCap="round" />
-
-    <path
-        android:fillColor="@android:color/transparent"
-        android:strokeWidth="2.5"
-        android:strokeColor="#6F4E37"
-        android:pathData="M63,31 C61,27 65,24 63,20 C62,18 63,17 65,17"
+        android:pathData="M59,41 C57,37 61,34 59,30 C58,28 59,27 61,27"
         android:strokeLineCap="round" />
 
 </vector>
