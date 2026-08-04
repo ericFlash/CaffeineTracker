@@ -123,23 +123,22 @@ fun MainApp(settingsRepository: SettingsRepository) {
                 AddDrinkScreen(
                     viewModel = vm,
                     onSaved = {
-                        androidx.core.content.ContextCompat.sendBroadcast(
-                            context,
-                            android.content.Intent(
-                                android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                            ).setPackage(context.packageName)
-                                .putExtra(
-                                    android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS,
-                                    android.appwidget.AppWidgetManager
-                                        .getInstance(context)
-                                        .getAppWidgetIds(
-                                            android.content.ComponentName(
-                                                context,
-                                                com.caffeine.tracker.widget.CaffeineWidgetReceiver::class.java
-                                            )
-                                        )
+                        val ids = android.appwidget.AppWidgetManager
+                            .getInstance(context)
+                            .getAppWidgetIds(
+                                android.content.ComponentName(
+                                    context,
+                                    com.caffeine.tracker.widget.CaffeineWidgetReceiver::class.java
                                 )
-                        )
+                            )
+                        val updateIntent = android.content.Intent(
+                            android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                        ).setPackage(context.packageName)
+                            .putExtra(
+                                android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS,
+                                ids
+                            )
+                        context.sendBroadcast(updateIntent)
                         navController.popBackStack()
                     }
                 )
