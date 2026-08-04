@@ -2,14 +2,12 @@ package com.caffeine.tracker.ui.adddrink
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +19,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.layout.Box
 
 @Composable
 fun AddDrinkScreen(
@@ -119,56 +118,47 @@ private fun DrinkDropdown(
     selectedDrink: com.caffeine.tracker.data.model.DrinkTemplate?,
     onDrinkSelected: (com.caffeine.tracker.data.model.DrinkTemplate) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
     val displayText = selectedDrink?.let { "${it.emoji} ${it.name}" } ?: "点击选择饮品"
 
-    Column {
-        Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
+    PickerField(
+        label = "选择饮品",
+        displayText = displayText,
+        onClick = { showDialog = true }
+    )
 
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .clickable { expanded = true }
-            .padding(bottom = 4.dp, top = 4.dp)) {
-            OutlinedTextField(
-                value = displayText,
-                onValueChange = {},
-                readOnly = true,
-                singleLine = true,
-                trailingIcon = {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "选择",
-                        modifier = Modifier.clickable { expanded = true })
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 320.dp)
-        ) {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(drinks, key = { it.name }) { drink ->
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
-                                Column(modifier = Modifier.padding(start = 12.dp)) {
-                                    Text(drink.name, fontWeight = FontWeight.Medium)
-                                    Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Card(
+                modifier = Modifier.fillMaxWidth().height(400.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(drinks, key = { it.name }) { drink ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                                        Column(modifier = Modifier.padding(start = 12.dp)) {
+                                            Text(drink.name, fontWeight = FontWeight.Medium)
+                                            Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    onDrinkSelected(drink)
+                                    showDialog = false
                                 }
-                            }
-                        },
-                        onClick = {
-                            onDrinkSelected(drink)
-                            expanded = false
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -182,50 +172,74 @@ private fun SizeDropdown(
     onSizeSelected: (String) -> Unit,
     onCustomSelected: () -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
+    PickerField(
+        label = "杯量",
+        displayText = selectedLabel,
+        onClick = { showDialog = true }
+    )
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Card(
+                modifier = Modifier.fillMaxWidth().height(360.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("选择杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(sizes) { label ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    onSizeSelected(label)
+                                    showDialog = false
+                                }
+                            )
+                        }
+                        item {
+                            DropdownMenuItem(
+                                text = { Text("自定义", fontWeight = FontWeight.Medium) },
+                                onClick = {
+                                    onCustomSelected()
+                                    showDialog = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PickerField(
+    label: String,
+    displayText: String,
+    onClick: () -> Unit
+) {
     Column {
-        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .clickable { expanded = true }
-            .padding(bottom = 4.dp, top = 4.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+        ) {
             OutlinedTextField(
-                value = selectedLabel,
+                value = displayText,
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
                 trailingIcon = {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "选择",
-                        modifier = Modifier.clickable { expanded = true })
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = "选择")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
-            )
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 320.dp)
-        ) {
-            sizes.forEach { label ->
-                DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = {
-                        onSizeSelected(label)
-                        expanded = false
-                    }
-                )
-            }
-            DropdownMenuItem(
-                text = { Text("自定义", fontWeight = FontWeight.Medium) },
-                onClick = {
-                    onCustomSelected()
-                    expanded = false
-                }
             )
         }
     }
