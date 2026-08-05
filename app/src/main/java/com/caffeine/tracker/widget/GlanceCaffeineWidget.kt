@@ -24,6 +24,7 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -46,6 +47,12 @@ import java.util.Locale
 class GlanceCaffeineWidget : GlanceAppWidget() {
 
     override val sizeMode: SizeMode = SizeMode.Exact
+
+    // 柔和暖调色阶，替代刺眼的纯绿/纯红
+    private val levelGreen = Color(0xFF8CAF8A)
+    private val levelYellow = Color(0xFFC7A34A)
+    private val levelOrange = Color(0xFFD98E4A)
+    private val levelRed = Color(0xFFC2563C)
 
     @OptIn(ExperimentalGlanceApi::class)
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -137,12 +144,28 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                                 text = hour.time,
                                 style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 9.sp)
                             )
-                            Spacer(GlanceModifier.height(2.dp))
-                            Text(
-                                text = hour.dot,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            )
-                            Spacer(GlanceModifier.height(2.dp))
+                        }
+                    }
+                }
+                Spacer(GlanceModifier.height(2.dp))
+                // 中部：6 小时浓度迷你柱状图（整行一张位图）
+                Image(
+                    provider = ImageProvider(data.barsBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.fillMaxWidth().height(18.dp),
+                    contentScale = ContentScale.FillBounds
+                )
+                Spacer(GlanceModifier.height(2.dp))
+                // 底部：6 小时浓度数值
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    data.hourly.take(6).forEach { hour ->
+                        Column(
+                            modifier = GlanceModifier.defaultWeight(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
                                 text = hour.levelText,
                                 style = TextStyle(color = ColorProvider(hour.color), fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -154,7 +177,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         }
     }
 
-    private data class HourData(val time: String, val dot: String, val levelText: String, val color: Color)
+    private data class HourData(val time: String, val levelText: String, val color: Color)
 
     private data class WidgetData(
         val currentLevel: Double,
@@ -164,6 +187,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         val percentText: String,
         val ringColor: Color,
         val ringBitmap: Bitmap,
+        val barsBitmap: Bitmap,
         val metabolismText: String,
         val hourly: List<HourData>
     )
@@ -210,7 +234,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                 "预计 ${timeFmt.format(eta)} 可安心入睡"
             }
 
-            val sdf = SimpleDateFormat("HH", Locale.getDefault())
+            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
             for (h in 0 until 6) {
                 val futureTime = now + h * 3600_000L
                 val level = CaffeinePharmacokinetics.calculateCurrentLevel(
@@ -228,17 +252,17 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         val pct = (frac * 100).toInt()
         // 按“占日限额比例”动态选色：绿 -> 黄 -> 橙 -> 红
         val ringColor = when {
-            frac >= 0.75f -> Color(0xFFF44336)
-            frac >= 0.5f -> Color(0xFFFF9800)
-            frac >= 0.25f -> Color(0xFFFFC107)
-            else -> Color(0xFF4CAF50)
+            frac >= 0.75f -> levelRed
+            frac >= 0.5f -> levelOrange
+            frac >= 0.25f -> levelYellow
+            else -> levelGreen
         }
         val ringBitmap = buildRingBitmap(frac, ringColor, Color(0xFFE8E0D8))
+        val barsBitmap = buildBarsBitmap(hourly.map { it.second }, dailyLimit.toDouble())
 
         val hourlyData = hourly.map { (time, level) ->
             HourData(
                 time = time,
-                dot = levelDot(level),
                 levelText = "%.0f".format(level),
                 color = levelColor(level)
             )
@@ -252,9 +276,33 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             percentText = "$pct%",
             ringColor = ringColor,
             ringBitmap = ringBitmap,
+            barsBitmap = barsBitmap,
             metabolismText = metabolismText,
             hourly = hourlyData
         )
+    }
+
+    private fun buildBarsBitmap(levels: List<Double>, dailyLimit: Double): Bitmap {
+        val w = 1080
+        val h = 108
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val n = levels.size.coerceAtLeast(1)
+        val maxVal = maxOf(levels.maxOrNull() ?: 0.0, dailyLimit).coerceAtLeast(1.0)
+        val slot = w.toFloat() / n
+        val barWidth = slot * 0.42f
+        val barMinH = 14f
+        val barMaxH = 88f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        levels.forEachIndexed { i, level ->
+            val ratio = (level / maxVal).toFloat().coerceIn(0f, 1f)
+            val barH = barMinH + (barMaxH - barMinH) * ratio
+            val left = i * slot + (slot - barWidth) / 2f
+            val top = h - barH
+            paint.color = levelColor(level).toArgb()
+            canvas.drawRoundRect(left, top, left + barWidth, h, barWidth / 2f, barWidth / 2f, paint)
+        }
+        return bitmap
     }
 
     private fun buildRingBitmap(frac: Float, ringColor: Color, trackColor: Color): Bitmap {
@@ -278,19 +326,11 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         return bitmap
     }
 
-    private fun levelDot(level: Double): String = when {
-        level > 200 -> "●"
-        level > 100 -> "◒"
-        level > 50 -> "◑"
-        else -> "○"
-    }
-
     private fun levelColor(level: Double): Color = when {
-        level > 300 -> Color(0xFFF44336)
-        level > 200 -> Color(0xFFFF5722)
-        level > 100 -> Color(0xFFFF9800)
-        level > 50 -> Color(0xFFFFC107)
-        else -> Color(0xFF4CAF50)
+        level > 200 -> levelRed
+        level > 100 -> levelOrange
+        level > 50 -> levelYellow
+        else -> levelGreen
     }
 }
 
