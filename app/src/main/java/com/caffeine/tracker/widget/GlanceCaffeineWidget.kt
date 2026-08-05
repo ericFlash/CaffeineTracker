@@ -1,22 +1,28 @@
 package com.caffeine.tracker.widget
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.CircularProgressIndicator
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -24,11 +30,13 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.caffeine.tracker.MainActivity
+import com.caffeine.tracker.R
 import com.caffeine.tracker.data.local.CaffeineDatabase
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
 import java.text.SimpleDateFormat
@@ -86,16 +94,28 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.defaultWeight(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator(
-                            color = ColorProvider(data.ringColor)
-                        )
-                        Spacer(GlanceModifier.height(4.dp))
-                        Text(
-                            text = data.percentText,
-                            style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        )
+                        Box(
+                            modifier = GlanceModifier.size(64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                provider = ImageProvider(data.ringBitmap),
+                                contentDescription = null,
+                                modifier = GlanceModifier.fillMaxSize()
+                            )
+                            Text(
+                                text = data.percentText,
+                                style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            )
+                        }
                     }
                 }
+
+                Spacer(GlanceModifier.height(6.dp))
+                Text(
+                    text = data.metabolismText,
+                    style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 11.sp)
+                )
 
                 Spacer(GlanceModifier.height(8.dp))
                 Text(
@@ -143,6 +163,8 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         val progressFraction: Float,
         val percentText: String,
         val ringColor: Color,
+        val ringBitmap: Bitmap,
+        val metabolismText: String,
         val hourly: List<HourData>
     )
 
@@ -153,6 +175,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         var dailyLimit = 400f
         val hourly = mutableListOf<Pair<String, Double>>()
         val records = mutableListOf<Pair<Double, Long>>()
+        var metabolismText = "--"
 
         try {
             val db = CaffeineDatabase.getInstance(context)
@@ -176,6 +199,17 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             )
             totalToday = drinkRecords.sumOf { it.caffeineMg }
 
+            val sleepSafeMs = CaffeinePharmacokinetics.estimatedTimeToSleepSafe(
+                drinkRecords, halfLife, now
+            )
+            metabolismText = if (sleepSafeMs <= 0) {
+                "已低于安全线"
+            } else {
+                val eta = now + sleepSafeMs
+                val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+                "预计 ${timeFmt.format(eta)} 可安心入睡"
+            }
+
             val sdf = SimpleDateFormat("HH", Locale.getDefault())
             for (h in 0 until 5) {
                 val futureTime = now + h * 3600_000L
@@ -192,6 +226,14 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
 
         val frac = (currentLevel / dailyLimit.toDouble()).toFloat().coerceIn(0f, 1f)
         val pct = (frac * 100).toInt()
+        // 按“占日限额比例”动态选色：绿 -> 黄 -> 橙 -> 红
+        val ringColor = when {
+            frac >= 0.75f -> Color(0xFFF44336)
+            frac >= 0.5f -> Color(0xFFFF9800)
+            frac >= 0.25f -> Color(0xFFFFC107)
+            else -> Color(0xFF4CAF50)
+        }
+        val ringBitmap = buildRingBitmap(frac, ringColor, Color(0xFFE8E0D8))
 
         val hourlyData = hourly.map { (time, level) ->
             HourData(
@@ -208,9 +250,32 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             todayText = "今日 %.0f/%.0f".format(totalToday, dailyLimit),
             progressFraction = frac,
             percentText = "$pct%",
-            ringColor = levelColor(currentLevel),
+            ringColor = ringColor,
+            ringBitmap = ringBitmap,
+            metabolismText = metabolismText,
             hourly = hourlyData
         )
+    }
+
+    private fun buildRingBitmap(frac: Float, ringColor: Color, trackColor: Color): Bitmap {
+        val sizePx = 192
+        val strokePx = 16f
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = strokePx
+        }
+        val inset = strokePx / 2f
+        val bounds = RectF(inset, inset, sizePx - inset, sizePx - inset)
+        paint.color = trackColor.toArgb()
+        canvas.drawOval(bounds, paint)
+        if (frac > 0f) {
+            paint.color = ringColor.toArgb()
+            paint.strokeCap = Paint.Cap.ROUND
+            canvas.drawArc(bounds, -90f, 360f * frac.coerceIn(0f, 1f), false, paint)
+        }
+        return bitmap
     }
 
     private fun levelDot(level: Double): String = when {
