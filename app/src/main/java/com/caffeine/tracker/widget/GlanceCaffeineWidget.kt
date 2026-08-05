@@ -300,7 +300,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             val left = i * slot + (slot - barWidth) / 2f
             val top = h - barH
             paint.color = levelColor(level).toArgb()
-            canvas.drawRoundRect(left, top, left + barWidth, h, barWidth / 2f, barWidth / 2f, paint)
+            canvas.drawRoundRect(left, top, left + barWidth, h.toFloat(), barWidth / 2f, barWidth / 2f, paint)
         }
         return bitmap
     }
