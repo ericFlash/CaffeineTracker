@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -154,6 +155,8 @@ private fun CaffeineCurve(
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val textColor = MaterialTheme.colorScheme.onSurface
     val surfaceColor = MaterialTheme.colorScheme.surface
+    val safeColor = Color(0xFF4CAF50)
+    val textArgb = textColor.toArgb()
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
     val sdfDay = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
 
@@ -165,26 +168,29 @@ private fun CaffeineCurve(
         val displayEnd = maxOf(maxTime, curveEndTime)
         val timeRange = (displayEnd - displayStart).toFloat().coerceAtLeast(1f)
 
+        // limit band (red zone above dailyLimit)
+        val limitY = size.height * (1f - (dailyLimit / maxVal)).toFloat()
+        drawRect(limitColor.copy(alpha = 0.06f), Offset(0f, 0f), androidx.compose.ui.geometry.Size(size.width, limitY.coerceAtLeast(0f)))
+
+        // sleep-safe band (green zone below 50mg)
+        val sleepY = size.height * (1f - (CaffeinePharmacokinetics.SLEEP_SAFE_MG / maxVal)).toFloat()
+        drawRect(safeColor.copy(alpha = 0.05f), Offset(0f, sleepY), androidx.compose.ui.geometry.Size(size.width, (size.height - sleepY).coerceAtLeast(0f)))
+
         // grid lines
+        val yLabelPaint = android.graphics.Paint().apply {
+            color = textArgb; textSize = 20f; alpha = 100
+        }
         for (i in 0..4) {
             val y = size.height * (1f - i / 4f)
             drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
             drawContext.canvas.nativeCanvas.drawText(
-                "%.0f".format(maxVal * i / 4),
-                4f, y - 4f,
-                android.graphics.Paint().apply {
-                    color = textColor.hashCode()
-                    textSize = 20f
-                    alpha = 100
-                }
+                "%.0f".format(maxVal * i / 4), 4f, y - 4f, yLabelPaint
             )
         }
 
         // time labels on x-axis
         val timeLabelPaint = android.graphics.Paint().apply {
-            color = textColor.hashCode()
-            textSize = 16f
-            alpha = 140
+            color = textArgb; textSize = 16f; alpha = 140
             textAlign = android.graphics.Paint.Align.CENTER
         }
         val rangeHours = (displayEnd - displayStart) / 3_600_000f
@@ -201,22 +207,17 @@ private fun CaffeineCurve(
             drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 4f, timeLabelPaint)
         }
 
-        // limit line
-        val limitY = size.height * (1f - (dailyLimit / maxVal)).toFloat()
-        drawLine(limitColor.copy(alpha = 0.5f), Offset(0f, limitY), Offset(size.width, limitY),
-            strokeWidth = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
+        // limit dashed line
+        drawLine(limitColor.copy(alpha = 0.6f), Offset(0f, limitY), Offset(size.width, limitY),
+            strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
 
-        // sleep safe threshold line (50mg)
-        val safeColor = Color(0xFF4CAF50)
-        val sleepY = size.height * (1f - (CaffeinePharmacokinetics.SLEEP_SAFE_MG / maxVal)).toFloat()
-        drawLine(safeColor.copy(alpha = 0.5f), Offset(0f, sleepY), Offset(size.width, sleepY),
-            strokeWidth = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
+        // sleep safe threshold dashed line
+        drawLine(safeColor.copy(alpha = 0.6f), Offset(0f, sleepY), Offset(size.width, sleepY),
+            strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
         drawContext.canvas.nativeCanvas.drawText(
-            "睡眠安全线 50mg", 4f, sleepY - 4f,
+            "睡眠安全 50mg", 4f, sleepY - 4f,
             android.graphics.Paint().apply {
-                color = safeColor.hashCode()
-                textSize = 18f
-                alpha = 150
+                color = safeColor.toArgb(); textSize = 18f; alpha = 160
             }
         )
 
@@ -243,16 +244,22 @@ private fun CaffeineCurve(
             }
             drawPath(path, lineColor, style = Stroke(width = 3f, cap = StrokeCap.Round))
 
-            // gradient fill under curve
+            // vertical gradient fill under curve
             val fillPath = Path().apply {
                 addPath(path)
                 lineTo(pts.last().x, size.height)
                 lineTo(pts.first().x, size.height)
                 close()
             }
-            drawPath(fillPath, lineColor.copy(alpha = 0.08f))
+            drawPath(
+                fillPath,
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(lineColor.copy(alpha = 0.3f), lineColor.copy(alpha = 0.02f)),
+                    startY = 0f, endY = size.height
+                )
+            )
 
-            // dots at actual drink intake times
+            // intake markers: triangle at x-axis + dot on curve
             intakeTimestamps.forEach { ts ->
                 if (ts in displayStart..displayEnd) {
                     val x = ((ts - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
@@ -261,6 +268,14 @@ private fun CaffeineCurve(
                     val y = size.height * (1f - (level / maxVal)).toFloat()
                     drawCircle(lineColor, radius = 5f, center = Offset(x, y))
                     drawCircle(surfaceColor, radius = 3f, center = Offset(x, y))
+                    // triangle marker at bottom
+                    val tri = Path().apply {
+                        moveTo(x, size.height - 12f)
+                        lineTo(x - 4f, size.height - 4f)
+                        lineTo(x + 4f, size.height - 4f)
+                        close()
+                    }
+                    drawPath(tri, lineColor.copy(alpha = 0.8f))
                 }
             }
         }
