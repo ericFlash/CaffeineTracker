@@ -1,9 +1,12 @@
 package com.caffeine.tracker.ui.history
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.caffeine.tracker.data.local.DrinkRecord
 import com.caffeine.tracker.data.repository.DrinkRepository
+import com.caffeine.tracker.widget.GlanceCaffeineWidget
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +21,7 @@ data class HistoryUiState(
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val drinkRepository: DrinkRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HistoryUiState())
@@ -33,7 +37,10 @@ class HistoryViewModel @Inject constructor(
 
     fun deleteRecord(record: DrinkRecord) {
         viewModelScope.launch(Dispatchers.IO) {
-            try { drinkRepository.delete(record) } catch (_: Exception) { }
+            try {
+                drinkRepository.delete(record)
+                GlanceCaffeineWidget().updateAll(context)
+            } catch (_: Exception) { }
         }
     }
 }
