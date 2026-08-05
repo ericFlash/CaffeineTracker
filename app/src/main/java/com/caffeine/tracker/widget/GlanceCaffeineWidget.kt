@@ -59,7 +59,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .padding(8.dp)
+                    .padding(5.dp)
                     .background(ColorProvider(Color(0xFFFDF6F0)))
                     .clickable(actionStartActivity<MainActivity>()),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -68,7 +68,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     text = "体内咖啡因 · ${data.todayText}",
                     style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp)
                 )
-                Spacer(GlanceModifier.height(3.dp))
+                Spacer(GlanceModifier.height(2.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -106,7 +106,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     }
                 }
 
-                Spacer(GlanceModifier.height(3.dp))
+                Spacer(GlanceModifier.height(2.dp))
                 // 横向进度条：体内浓度占日限额的比例
                 Image(
                     provider = ImageProvider(data.barBitmap),
@@ -114,7 +114,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.fillMaxWidth().height(14.dp),
                     contentScale = ContentScale.FillBounds
                 )
-                Spacer(GlanceModifier.height(4.dp))
+                Spacer(GlanceModifier.height(3.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -132,8 +132,8 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         }
                     }
                 }
-                Spacer(GlanceModifier.height(4.dp))
-                // 未来 6 小时：emoji + 预测浓度（渐变配色）
+                Spacer(GlanceModifier.height(3.dp))
+                // 未来 6 小时：影响程度 emoji
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -144,7 +144,25 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "${hour.emoji} ${hour.levelText}",
+                                text = hour.emoji,
+                                style = TextStyle(fontSize = 11.sp)
+                            )
+                        }
+                    }
+                }
+                Spacer(GlanceModifier.height(2.dp))
+                // 未来 6 小时：预测浓度（渐变配色）
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    data.hourly.take(6).forEach { hour ->
+                        Column(
+                            modifier = GlanceModifier.defaultWeight(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = hour.levelText,
                                 style = TextStyle(color = ColorProvider(hour.color), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             )
                         }
