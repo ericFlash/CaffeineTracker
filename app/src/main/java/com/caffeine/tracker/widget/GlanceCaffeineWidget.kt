@@ -101,7 +101,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     ) {
                         Text(
                             text = data.percentText,
-                            style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         )
                     }
                 }
@@ -111,7 +111,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                 Image(
                     provider = ImageProvider(data.barBitmap),
                     contentDescription = null,
-                    modifier = GlanceModifier.fillMaxWidth().height(12.dp),
+                    modifier = GlanceModifier.fillMaxWidth().height(14.dp),
                     contentScale = ContentScale.FillBounds
                 )
                 Spacer(GlanceModifier.height(4.dp))
@@ -133,6 +133,24 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     }
                 }
                 Spacer(GlanceModifier.height(6.dp))
+                // 未来 6 小时影响程度 emoji
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    data.hourly.take(6).forEach { hour ->
+                        Column(
+                            modifier = GlanceModifier.defaultWeight(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = hour.emoji,
+                                style = TextStyle(fontSize = 12.sp)
+                            )
+                        }
+                    }
+                }
+                Spacer(GlanceModifier.height(2.dp))
                 // 未来 6 小时预测浓度（渐变配色：低 -> 高 = 绿 -> 黄 -> 橙 -> 红）
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -154,7 +172,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         }
     }
 
-    private data class HourData(val time: String, val levelText: String, val color: Color)
+    private data class HourData(val time: String, val emoji: String, val levelText: String, val color: Color)
 
     private data class WidgetData(
         val currentLevel: Double,
@@ -239,6 +257,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         val hourlyData = hourly.map { (time, level) ->
             HourData(
                 time = time,
+                emoji = impactEmoji(level),
                 levelText = "%.0f".format(level),
                 color = gradientColor(level, maxHourlyLevel)
             )
@@ -258,8 +277,9 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
     }
 
     private fun buildBarBitmap(frac: Float, fillColor: Color, trackColor: Color): Bitmap {
-        val w = 1080
-        val h = 72
+        // 25:1 位图，接近实际显示比例，两端保持正圆
+        val w = 1500
+        val h = 60
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -272,6 +292,13 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             canvas.drawRoundRect(0f, 0f, fillW, h.toFloat(), corner, corner, paint)
         }
         return bitmap
+    }
+
+    private fun impactEmoji(level: Double): String = when {
+        level > 200 -> "🤯"
+        level > 100 -> "😬"
+        level > 50 -> "🙂"
+        else -> "😴"
     }
 
     private fun gradientColor(level: Double, maxVal: Double): Color {
