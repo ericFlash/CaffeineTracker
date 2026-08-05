@@ -132,8 +132,8 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         }
                     }
                 }
-                Spacer(GlanceModifier.height(6.dp))
-                // 未来 6 小时影响程度 emoji
+                Spacer(GlanceModifier.height(4.dp))
+                // 未来 6 小时：emoji + 预测浓度（渐变配色）
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -144,26 +144,8 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = hour.emoji,
-                                style = TextStyle(fontSize = 12.sp)
-                            )
-                        }
-                    }
-                }
-                Spacer(GlanceModifier.height(2.dp))
-                // 未来 6 小时预测浓度（渐变配色：低 -> 高 = 绿 -> 黄 -> 橙 -> 红）
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    data.hourly.take(6).forEach { hour ->
-                        Column(
-                            modifier = GlanceModifier.defaultWeight(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = hour.levelText,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                text = "${hour.emoji} ${hour.levelText}",
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
