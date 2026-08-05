@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -131,16 +132,8 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         }
                     }
                 }
-                Spacer(GlanceModifier.height(2.dp))
-                // 中部：6 小时浓度迷你柱状图（整行一张位图）
-                Image(
-                    provider = ImageProvider(data.barsBitmap),
-                    contentDescription = null,
-                    modifier = GlanceModifier.fillMaxWidth().height(18.dp),
-                    contentScale = ContentScale.FillBounds
-                )
-                Spacer(GlanceModifier.height(2.dp))
-                // 底部：6 小时浓度数值
+                Spacer(GlanceModifier.height(6.dp))
+                // 未来 6 小时预测浓度（渐变配色：低 -> 高 = 绿 -> 黄 -> 橙 -> 红）
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -152,7 +145,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         ) {
                             Text(
                                 text = hour.levelText,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
@@ -171,7 +164,6 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         val percentText: String,
         val ringColor: Color,
         val barBitmap: Bitmap,
-        val barsBitmap: Bitmap,
         val metabolismText: String,
         val hourly: List<HourData>
     )
@@ -242,13 +234,13 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             else -> levelGreen
         }
         val barBitmap = buildBarBitmap(frac, ringColor, Color(0xFFE8E0D8))
-        val barsBitmap = buildBarsBitmap(hourly.map { it.second }, dailyLimit.toDouble())
+        val maxHourlyLevel = hourly.maxOfOrNull { it.second } ?: 0.0
 
         val hourlyData = hourly.map { (time, level) ->
             HourData(
                 time = time,
                 levelText = "%.0f".format(level),
-                color = levelColor(level)
+                color = gradientColor(level, maxHourlyLevel)
             )
         }
 
@@ -260,7 +252,6 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             percentText = "$pct%",
             ringColor = ringColor,
             barBitmap = barBitmap,
-            barsBitmap = barsBitmap,
             metabolismText = metabolismText,
             hourly = hourlyData
         )
@@ -283,34 +274,13 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         return bitmap
     }
 
-    private fun buildBarsBitmap(levels: List<Double>, dailyLimit: Double): Bitmap {
-        val w = 1080
-        val h = 108
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val n = levels.size.coerceAtLeast(1)
-        val maxVal = maxOf(levels.maxOrNull() ?: 0.0, dailyLimit).coerceAtLeast(1.0)
-        val slot = w.toFloat() / n
-        val barWidth = slot * 0.42f
-        val barMinH = 14f
-        val barMaxH = 88f
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-        levels.forEachIndexed { i, level ->
-            val ratio = (level / maxVal).toFloat().coerceIn(0f, 1f)
-            val barH = barMinH + (barMaxH - barMinH) * ratio
-            val left = i * slot + (slot - barWidth) / 2f
-            val top = h - barH
-            paint.color = levelColor(level).toArgb()
-            canvas.drawRoundRect(left, top, left + barWidth, h.toFloat(), barWidth / 2f, barWidth / 2f, paint)
+    private fun gradientColor(level: Double, maxVal: Double): Color {
+        val t = (level / maxVal.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
+        return when {
+            t < 0.34f -> lerp(levelGreen, levelYellow, t / 0.34f)
+            t < 0.67f -> lerp(levelYellow, levelOrange, (t - 0.34f) / 0.33f)
+            else -> lerp(levelOrange, levelRed, (t - 0.67f) / 0.33f)
         }
-        return bitmap
-    }
-
-    private fun levelColor(level: Double): Color = when {
-        level > 200 -> levelRed
-        level > 100 -> levelOrange
-        level > 50 -> levelYellow
-        else -> levelGreen
     }
 }
 
