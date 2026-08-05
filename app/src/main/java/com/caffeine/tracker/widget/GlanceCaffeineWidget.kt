@@ -252,14 +252,14 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             else -> levelGreen
         }
         val barBitmap = buildBarBitmap(frac, ringColor, Color(0xFFE8E0D8))
-        val maxHourlyLevel = hourly.maxOfOrNull { it.second } ?: 0.0
 
         val hourlyData = hourly.map { (time, level) ->
             HourData(
                 time = time,
                 emoji = impactEmoji(level),
                 levelText = "%.0f".format(level),
-                color = gradientColor(level, maxHourlyLevel)
+                // 与左上角数值、进度条统一：颜色 = 占日限额的比例
+                color = gradientColor(level, dailyLimit.toDouble())
             )
         }
 
