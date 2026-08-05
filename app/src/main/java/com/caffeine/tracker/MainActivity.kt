@@ -18,10 +18,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.glance.appwidget.updateAll
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -43,7 +41,6 @@ import com.caffeine.tracker.ui.stats.StatsViewModel
 import com.caffeine.tracker.ui.theme.CaffeineTrackerTheme
 import com.caffeine.tracker.worker.WidgetUpdateWorker
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -122,16 +119,9 @@ fun MainApp(settingsRepository: SettingsRepository) {
             }
             composable(Screen.AddDrink.route) {
                 val vm: AddDrinkViewModel = hiltViewModel()
-                val context = androidx.compose.ui.platform.LocalContext.current
-                val scope = rememberCoroutineScope()
                 AddDrinkScreen(
                     viewModel = vm,
-                    onSaved = {
-                        scope.launch {
-                            com.caffeine.tracker.widget.GlanceCaffeineWidget().updateAll(context)
-                        }
-                        navController.popBackStack()
-                    }
+                    onSaved = { navController.popBackStack() }
                 )
             }
             composable(Screen.History.route) {
