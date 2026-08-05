@@ -1,5 +1,6 @@
 package com.caffeine.tracker.ui.adddrink
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.caffeine.tracker.data.local.DrinkRecord
@@ -7,6 +8,7 @@ import com.caffeine.tracker.data.model.DrinkCatalog
 import com.caffeine.tracker.data.model.DrinkSize
 import com.caffeine.tracker.data.model.DrinkTemplate
 import com.caffeine.tracker.data.repository.DrinkRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,7 @@ data class AddDrinkUiState(
 @HiltViewModel
 class AddDrinkViewModel @Inject constructor(
     private val drinkRepository: DrinkRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddDrinkUiState())
@@ -82,6 +85,7 @@ class AddDrinkViewModel @Inject constructor(
                         timestamp = System.currentTimeMillis(),
                     )
                 )
+                com.caffeine.tracker.widget.GlanceCaffeineWidget().updateAll(context)
             } catch (_: Exception) { }
         }
     }
