@@ -3,15 +3,18 @@ package com.caffeine.tracker.widget
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.CircularProgressIndicator
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
@@ -21,8 +24,6 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.material3.CircularProgressIndicator
-import androidx.glance.material3.MaterialTheme
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -42,94 +43,90 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val data = loadData(context.applicationContext)
         provideContent {
-            MaterialTheme {
-                Column(
-                    modifier = GlanceModifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .background(ColorProvider(Color(0xFFFDF6F0)))
-                        .clickable(actionStartActivity<MainActivity>()),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "体内咖啡因",
-                        style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12f)
-                    )
-                    Spacer(GlanceModifier.height(8.dp))
+            Column(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .background(ColorProvider(Color(0xFFFDF6F0)))
+                    .clickable(actionStartActivity<MainActivity>()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "体内咖啡因",
+                    style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12.sp)
+                )
+                Spacer(GlanceModifier.height(8.dp))
 
-                    Row(
-                        modifier = GlanceModifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = GlanceModifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = data.currentLevelText,
-                                    style = TextStyle(
-                                        color = ColorProvider(data.ringColor),
-                                        fontSize = 30f,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                                Text(
-                                    text = " mg",
-                                    style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12f)
-                                )
-                            }
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = GlanceModifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = data.todayText,
-                                style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11f)
+                                text = data.currentLevelText,
+                                style = TextStyle(
+                                    color = ColorProvider(data.ringColor),
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            Text(
+                                text = " mg",
+                                style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12.sp)
                             )
                         }
+                        Text(
+                            text = data.todayText,
+                            style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp)
+                        )
+                    }
 
+                    Column(
+                        modifier = GlanceModifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            color = ColorProvider(data.ringColor)
+                        )
+                        Spacer(GlanceModifier.height(4.dp))
+                        Text(
+                            text = data.percentText,
+                            style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+
+                Spacer(GlanceModifier.height(8.dp))
+                Text(
+                    text = "───────────────",
+                    style = TextStyle(color = ColorProvider(Color(0xFFE0D5CC)), fontSize = 10.sp)
+                )
+                Spacer(GlanceModifier.height(6.dp))
+
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    data.hourly.take(5).forEach { hour ->
                         Column(
                             modifier = GlanceModifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            CircularProgressIndicator(
-                                progress = data.progressFraction,
-                                color = ColorProvider(data.ringColor),
-                                trackColor = ColorProvider(Color(0xFFE0D5CC))
-                            )
-                            Spacer(GlanceModifier.height(4.dp))
                             Text(
-                                text = data.percentText,
-                                style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14f, fontWeight = FontWeight.Bold)
+                                text = hour.time,
+                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 10.sp)
                             )
-                        }
-                    }
-
-                    Spacer(GlanceModifier.height(8.dp))
-                    Text(
-                        text = "───────────────",
-                        style = TextStyle(color = ColorProvider(Color(0xFFE0D5CC)), fontSize = 10f)
-                    )
-                    Spacer(GlanceModifier.height(6.dp))
-
-                    Row(
-                        modifier = GlanceModifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        data.hourly.take(5).forEach { hour ->
-                            Column(
-                                modifier = GlanceModifier.weight(1f),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = hour.time,
-                                    style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 10f)
-                                )
-                                Spacer(GlanceModifier.height(2.dp))
-                                Text(
-                                    text = hour.dot,
-                                    style = TextStyle(color = ColorProvider(hour.color), fontSize = 14f, fontWeight = FontWeight.Bold)
-                                )
-                                Spacer(GlanceModifier.height(2.dp))
-                                Text(
-                                    text = hour.levelText,
-                                    style = TextStyle(color = ColorProvider(hour.color), fontSize = 13f, fontWeight = FontWeight.Bold)
-                                )
-                            }
+                            Spacer(GlanceModifier.height(2.dp))
+                            Text(
+                                text = hour.dot,
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            )
+                            Spacer(GlanceModifier.height(2.dp))
+                            Text(
+                                text = hour.levelText,
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }
