@@ -22,8 +22,8 @@
         </activity>
 
         <receiver
-            android:name=".widget.CaffeineWidgetReceiver"
-            android:exported="true">
+            android:name=".widget.GlanceCaffeineWidgetReceiver"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
