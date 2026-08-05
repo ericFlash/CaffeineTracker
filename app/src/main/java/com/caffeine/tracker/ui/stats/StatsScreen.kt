@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -206,6 +207,7 @@ private fun MonthHeatmap(
         val cellH = (availH - gap * (rows - 1)) / rows.toFloat()
         val corner = 8f * density
         val dayFont = 10f * density
+        val valueFont = 8.5f * density
         val headerFont = 11f * density
 
         // 顶部星期表头
@@ -218,7 +220,8 @@ private fun MonthHeatmap(
             drawContext.canvas.nativeCanvas.drawText(label, x, headerH - 6f * density, headerPaint)
         }
 
-        // 30 天色块：深浅 = 摄入量占日限额比例，超限标红，今天加描边
+        // 30 天色块：底色按比例变浅色，日期 + /数值（渐变配色），今天加描边
+        val maxVal = maxOf(data.maxOf { it.totalMg }, dailyLimit).coerceAtLeast(1.0)
         data.forEachIndexed { i, day ->
             val idx = startIdx + i
             val col = idx % 7
@@ -226,11 +229,11 @@ private fun MonthHeatmap(
             val ratio = if (dailyLimit > 0) (day.totalMg / dailyLimit).toFloat() else 0f
             val fill = when {
                 day.totalMg <= 0 -> Color(0xFFF1EBE3)
-                ratio > 1f -> Color(0xFFC0392B)
-                ratio > 0.75f -> Color(0xFFD97B2B)
-                ratio > 0.5f -> Color(0xFFE8A05C)
-                ratio > 0.25f -> Color(0xFFF3C58C)
-                else -> Color(0xFFF9E3C2)
+                ratio > 1f -> Color(0xFFF0C4BE)
+                ratio > 0.75f -> Color(0xFFF0C79A)
+                ratio > 0.5f -> Color(0xFFF3D2A4)
+                ratio > 0.25f -> Color(0xFFF7DFB9)
+                else -> Color(0xFFF9E7CF)
             }
             val x = sidePad + col * (cellW + gap)
             val y = headerH + row * (cellH + gap)
@@ -240,27 +243,45 @@ private fun MonthHeatmap(
             if (i == n - 1) {
                 drawRoundRect(outlineColor, Offset(x, y), cellSize, cellCorner, style = Stroke(width = 1.5f * density))
             }
-            val darkText = day.totalMg <= 0 || ratio <= 0.5f
+            val centerX = x + cellW / 2f
+            // 日期
             val dayPaint = android.graphics.Paint().apply {
-                color = if (darkText) textArgb else android.graphics.Color.WHITE
+                color = textArgb
                 textSize = dayFont
-                alpha = if (day.totalMg <= 0) 120 else 255
+                alpha = 150
                 textAlign = android.graphics.Paint.Align.CENTER
             }
             drawContext.canvas.nativeCanvas.drawText(
                 day.date.substringAfterLast("/"),
-                x + cellW / 2f,
-                y + cellH / 2f + dayFont * 0.35f,
+                centerX,
+                y + cellH * 0.38f,
                 dayPaint
             )
+            // 当日咖啡因（/数值，渐变配色）
+            if (day.totalMg <= 0) {
+                val emptyPaint = android.graphics.Paint().apply {
+                    color = textArgb
+                    textSize = valueFont
+                    alpha = 110
+                    textAlign = android.graphics.Paint.Align.CENTER
+                }
+                drawContext.canvas.nativeCanvas.drawText("—", centerX, y + cellH * 0.78f, emptyPaint)
+            } else {
+                val valuePaint = android.graphics.Paint().apply {
+                    color = gradientColor(day.totalMg, maxVal).toArgb()
+                    textSize = valueFont
+                    textAlign = android.graphics.Paint.Align.CENTER
+                }
+                drawContext.canvas.nativeCanvas.drawText("/%.0f".format(day.totalMg), centerX, y + cellH * 0.78f, valuePaint)
+            }
         }
 
         // 底部图例：少 -> 多 -> 超限
         val legendY = size.height - legendH / 2f + 4f * density
         val step = 22f * density
         val buckets = listOf(
-            Color(0xFFF1EBE3), Color(0xFFF9E3C2), Color(0xFFF3C58C),
-            Color(0xFFE8A05C), Color(0xFFD97B2B), Color(0xFFC0392B)
+            Color(0xFFF1EBE3), Color(0xFFF9E7CF), Color(0xFFF7DFB9),
+            Color(0xFFF3D2A4), Color(0xFFF0C79A), Color(0xFFF0C4BE)
         )
         val centerX = size.width / 2f
         val legendStart = centerX - step * 2.5f
@@ -273,5 +294,18 @@ private fun MonthHeatmap(
             drawCircle(c, radius = 5f * density, center = Offset(legendStart + k * step, legendY))
         }
         drawContext.canvas.nativeCanvas.drawText("多", legendStart + 5f * step + step * 0.8f, legendY, labelPaint)
+    }
+}
+
+private fun gradientColor(value: Double, maxVal: Double): Color {
+    val t = (value / maxVal.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
+    val green = Color(0xFF8CAF8A)
+    val yellow = Color(0xFFC7A34A)
+    val orange = Color(0xFFD98E4A)
+    val red = Color(0xFFC2563C)
+    return when {
+        t < 0.34f -> lerp(green, yellow, t / 0.34f)
+        t < 0.67f -> lerp(yellow, orange, (t - 0.34f) / 0.33f)
+        else -> lerp(orange, red, (t - 0.67f) / 0.33f)
     }
 }
