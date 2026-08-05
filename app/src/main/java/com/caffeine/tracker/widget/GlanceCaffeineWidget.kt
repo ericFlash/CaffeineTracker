@@ -75,7 +75,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                                 text = data.currentLevelText,
                                 style = TextStyle(
                                     color = ColorProvider(data.ringColor),
-                                    fontSize = 30.sp,
+                                    fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
@@ -88,6 +88,11 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                             text = data.todayText,
                             style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp)
                         )
+                        Spacer(GlanceModifier.height(4.dp))
+                        Text(
+                            text = data.metabolismText,
+                            style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 11.sp)
+                        )
                     }
 
                     Column(
@@ -95,7 +100,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
-                            modifier = GlanceModifier.size(64.dp),
+                            modifier = GlanceModifier.size(76.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -105,17 +110,11 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                             )
                             Text(
                                 text = data.percentText,
-                                style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
                 }
-
-                Spacer(GlanceModifier.height(6.dp))
-                Text(
-                    text = data.metabolismText,
-                    style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 11.sp)
-                )
 
                 Spacer(GlanceModifier.height(8.dp))
                 Text(
@@ -125,10 +124,11 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                 Spacer(GlanceModifier.height(6.dp))
 
                 Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    data.hourly.take(5).forEach { hour ->
+                    data.hourly.take(6).forEach { hour ->
                         Column(
                             modifier = GlanceModifier.defaultWeight(),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -211,7 +211,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             }
 
             val sdf = SimpleDateFormat("HH", Locale.getDefault())
-            for (h in 0 until 5) {
+            for (h in 0 until 6) {
                 val futureTime = now + h * 3600_000L
                 val level = CaffeinePharmacokinetics.calculateCurrentLevel(
                     records.map { it.first }, records.map { it.second }, halfLife, futureTime
