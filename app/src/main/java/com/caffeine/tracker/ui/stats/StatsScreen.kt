@@ -272,7 +272,7 @@ private fun MonthHeatmap(
                     textSize = valueFont
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
-                drawContext.canvas.nativeCanvas.drawText("/%.0f".format(day.totalMg), centerX, y + cellH * 0.78f, valuePaint)
+                drawContext.canvas.nativeCanvas.drawText("%.0f".format(day.totalMg), centerX, y + cellH * 0.78f, valuePaint)
             }
         }
 
