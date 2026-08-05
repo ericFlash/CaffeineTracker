@@ -20,13 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -88,9 +89,13 @@ fun StatsScreen(viewModel: StatsViewModel) {
             elevation = CardDefaults.cardElevation(1.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("近30天趋势", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "近30天趋势 · 累计 %.0f mg".format(state.monthData.sumOf { it.totalMg }),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Spacer(Modifier.height(8.dp))
-                LineChart(state.monthData, state.dailyLimit, modifier = Modifier.fillMaxWidth().height(260.dp))
+                MonthHeatmap(state.monthData, state.dailyLimit, modifier = Modifier.fillMaxWidth().height(260.dp))
             }
         }
     }
@@ -145,23 +150,26 @@ private fun BarChart(
             val ratio = (day.totalMg / maxVal).toFloat().coerceIn(0f, 1f)
             val barHeight = ratio * chartHeight
             val x = chartLeft + i * slot + (slot - barWidth) / 2
-            val y = chartBottom - barHeight
-            val radius = (barWidth / 3f).coerceAtMost(10f)
             val isOver = day.totalMg > dailyLimit
             val color = if (isOver) overColor else barColor
-            // top-rounded bar via Path
-            val barPath = Path().apply {
-                moveTo(x, chartBottom)
-                lineTo(x, y + radius)
-                quadraticBezierTo(x, y, x + radius, y)
-                lineTo(x + barWidth - radius, y)
-                quadraticBezierTo(x + barWidth, y, x + barWidth, y + radius)
-                lineTo(x + barWidth, chartBottom)
-                close()
-            }
-            drawPath(barPath, color.copy(alpha = 0.35f + 0.6f * ratio))
-            if (isOver) {
-                drawPath(barPath, overColor.copy(alpha = 0.9f), style = Stroke(width = 2f))
+            // 零摄入日不画柱体，避免在基线和星期标签之间出现异常圆顶
+            if (barHeight > 0f) {
+                val y = chartBottom - barHeight
+                val radius = (barWidth / 3f).coerceAtMost(10f).coerceAtMost(barHeight / 2f)
+                // top-rounded bar via Path
+                val barPath = Path().apply {
+                    moveTo(x, chartBottom)
+                    lineTo(x, y + radius)
+                    quadraticBezierTo(x, y, x + radius, y)
+                    lineTo(x + barWidth - radius, y)
+                    quadraticBezierTo(x + barWidth, y, x + barWidth, y + radius)
+                    lineTo(x + barWidth, chartBottom)
+                    close()
+                }
+                drawPath(barPath, color.copy(alpha = 0.35f + 0.6f * ratio))
+                if (isOver) {
+                    drawPath(barPath, overColor.copy(alpha = 0.9f), style = Stroke(width = 2f))
+                }
             }
             drawContext.canvas.nativeCanvas.drawText(day.weekday, x + barWidth / 2, size.height - 2f, xLabelPaint)
         }
@@ -169,125 +177,100 @@ private fun BarChart(
 }
 
 @Composable
-private fun LineChart(
+private fun MonthHeatmap(
     data: List<DaySummary>,
     dailyLimit: Double,
     modifier: Modifier = Modifier
 ) {
-    val lineColor = MaterialTheme.colorScheme.primary
-    val avgColor = MaterialTheme.colorScheme.secondary
-    val limitColor = MaterialTheme.colorScheme.error
     val textColor = MaterialTheme.colorScheme.onSurface
-    val gridColor = MaterialTheme.colorScheme.outlineVariant
-    val surfaceColor = MaterialTheme.colorScheme.surface
+    val outlineColor = MaterialTheme.colorScheme.primary
     val textArgb = textColor.toArgb()
+    val density = LocalDensity.current.density
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
-        val maxVal = maxOf(data.maxOf { it.totalMg }, dailyLimit) * 1.15
-        val chartLeft = 38f
-        val chartTop = 6f
-        val chartBottom = size.height - 22f
-        val chartHeight = chartBottom - chartTop
-        val chartWidth = size.width - chartLeft
-
-        val yLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 18f; alpha = 110
-            textAlign = android.graphics.Paint.Align.RIGHT
-        }
-        for (i in 0..4) {
-            val yVal = maxVal * (4 - i) / 4
-            val y = chartTop + chartHeight * i / 4f
-            drawLine(gridColor, Offset(chartLeft, y), Offset(size.width, y), strokeWidth = 1f)
-            drawContext.canvas.nativeCanvas.drawText("%.0f".format(yVal), chartLeft - 4f, y + 5f, yLabelPaint)
-        }
-
-        // limit band
-        val limitY = chartBottom - (dailyLimit / maxVal * chartHeight).toFloat()
-        drawRect(limitColor.copy(alpha = 0.06f), Offset(chartLeft, chartTop), Size(chartWidth, (limitY - chartTop).coerceAtLeast(0f)))
-        drawLine(
-            limitColor.copy(alpha = 0.6f), Offset(chartLeft, limitY), Offset(size.width, limitY),
-            strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
-        )
-
         val n = data.size
-        val denom = (n - 1).coerceAtLeast(1)
-        fun pointFor(i: Int, value: Double): Offset {
-            val x = chartLeft + i * chartWidth / denom
-            val y = chartBottom - (value / maxVal * chartHeight).toFloat()
-            return Offset(x, y)
-        }
-        val pts = data.mapIndexed { i, day -> pointFor(i, day.totalMg) }
+        val weekdays = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
+        val startIdx = weekdays.indexOf(data.first().weekday).coerceIn(0, 6)
+        val rows = ((startIdx + n + 6) / 7).coerceAtLeast(1)
 
-        if (pts.size > 1) {
-            // smoothed curve
-            val path = Path().apply {
-                moveTo(pts[0].x, pts[0].y)
-                for (i in 1 until pts.size) {
-                    val prev = pts[i - 1]
-                    val curr = pts[i]
-                    val prevPrev = if (i >= 2) pts[i - 2] else prev
-                    val next = if (i < pts.size - 1) pts[i + 1] else curr
-                    val tension = 0.22f
-                    val cx1 = prev.x + (curr.x - prevPrev.x) * tension
-                    val cy1 = prev.y + (curr.y - prevPrev.y) * tension
-                    val cx2 = curr.x - (next.x - prev.x) * tension
-                    val cy2 = curr.y - (next.y - prev.y) * tension
-                    cubicTo(cx1, cy1, cx2, cy2, curr.x, curr.y)
-                }
-            }
-            // gradient fill
-            val fillPath = Path().apply {
-                addPath(path)
-                lineTo(pts.last().x, chartBottom)
-                lineTo(pts.first().x, chartBottom)
-                close()
-            }
-            drawPath(
-                fillPath,
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(lineColor.copy(alpha = 0.28f), lineColor.copy(alpha = 0.02f)),
-                    startY = chartTop,
-                    endY = chartBottom
-                )
-            )
-            drawPath(path, lineColor, style = Stroke(width = 2.8f, cap = StrokeCap.Round))
+        val headerH = 20f * density
+        val legendH = 24f * density
+        val bottomPad = 4f * density
+        val sidePad = 6f * density
+        val gap = 6f * density
+        val availW = size.width - sidePad * 2f
+        val cellW = (availW - gap * 6f) / 7f
+        val availH = size.height - headerH - legendH - bottomPad
+        val cellH = (availH - gap * (rows - 1)) / rows.toFloat()
+        val corner = 8f * density
+        val dayFont = 10f * density
+        val headerFont = 11f * density
 
-            // 7-day moving average
-            if (n >= 7) {
-                val avgPts = (0..n - 7).map { i ->
-                    val avg = data.subList(i, i + 7).map { it.totalMg }.sum() / 7.0
-                    pointFor(i + 3, avg)
-                }
-                val avgPath = Path().apply {
-                    moveTo(avgPts[0].x, avgPts[0].y)
-                    for (i in 1 until avgPts.size) lineTo(avgPts[i].x, avgPts[i].y)
-                }
-                drawPath(
-                    avgPath, avgColor.copy(alpha = 0.7f),
-                    style = Stroke(width = 2f, cap = StrokeCap.Round,
-                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 6f)))
-                )
-            }
-
-            // data dots
-            pts.forEach { pt ->
-                drawCircle(lineColor, radius = 4f, center = pt)
-                drawCircle(surfaceColor, radius = 2f, center = pt)
-            }
-        }
-
-        // smart x labels: first, last, and every ~7
-        val xLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 17f; alpha = 140
+        // 顶部星期表头
+        val headerPaint = android.graphics.Paint().apply {
+            color = textArgb; textSize = headerFont; alpha = 150
             textAlign = android.graphics.Paint.Align.CENTER
         }
-        val step = if (n <= 7) 1 else 7
-        data.forEachIndexed { i, day ->
-            if (i == 0 || i == n - 1 || i % step == 0) {
-                val x = chartLeft + i * chartWidth / denom
-                drawContext.canvas.nativeCanvas.drawText(day.date, x, size.height - 2f, xLabelPaint)
-            }
+        weekdays.forEachIndexed { c, label ->
+            val x = sidePad + c * (cellW + gap) + cellW / 2f
+            drawContext.canvas.nativeCanvas.drawText(label, x, headerH - 6f * density, headerPaint)
         }
+
+        // 30 天色块：深浅 = 摄入量占日限额比例，超限标红，今天加描边
+        data.forEachIndexed { i, day ->
+            val idx = startIdx + i
+            val col = idx % 7
+            val row = idx / 7
+            val ratio = if (dailyLimit > 0) (day.totalMg / dailyLimit).toFloat() else 0f
+            val fill = when {
+                day.totalMg <= 0 -> Color(0xFFF1EBE3)
+                ratio > 1f -> Color(0xFFC0392B)
+                ratio > 0.75f -> Color(0xFFD97B2B)
+                ratio > 0.5f -> Color(0xFFE8A05C)
+                ratio > 0.25f -> Color(0xFFF3C58C)
+                else -> Color(0xFFF9E3C2)
+            }
+            val x = sidePad + col * (cellW + gap)
+            val y = headerH + row * (cellH + gap)
+            val cellSize = Size(cellW, cellH)
+            val cellCorner = CornerRadius(corner, corner)
+            drawRoundRect(fill, Offset(x, y), cellSize, cellCorner)
+            if (i == n - 1) {
+                drawRoundRect(outlineColor, Offset(x, y), cellSize, cellCorner, style = Stroke(width = 1.5f * density))
+            }
+            val darkText = day.totalMg <= 0 || ratio <= 0.5f
+            val dayPaint = android.graphics.Paint().apply {
+                color = if (darkText) textArgb else android.graphics.Color.WHITE
+                textSize = dayFont
+                alpha = if (day.totalMg <= 0) 120 else 255
+                textAlign = android.graphics.Paint.Align.CENTER
+            }
+            drawContext.canvas.nativeCanvas.drawText(
+                day.date.substringAfterLast("/"),
+                x + cellW / 2f,
+                y + cellH / 2f + dayFont * 0.35f,
+                dayPaint
+            )
+        }
+
+        // 底部图例：少 -> 多 -> 超限
+        val legendY = size.height - legendH / 2f + 4f * density
+        val step = 22f * density
+        val buckets = listOf(
+            Color(0xFFF1EBE3), Color(0xFFF9E3C2), Color(0xFFF3C58C),
+            Color(0xFFE8A05C), Color(0xFFD97B2B), Color(0xFFC0392B)
+        )
+        val centerX = size.width / 2f
+        val legendStart = centerX - step * 2.5f
+        val labelPaint = android.graphics.Paint().apply {
+            color = textArgb; textSize = 10f * density; alpha = 160
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        drawContext.canvas.nativeCanvas.drawText("少", legendStart - step * 0.8f, legendY, labelPaint)
+        buckets.forEachIndexed { k, c ->
+            drawCircle(c, radius = 5f * density, center = Offset(legendStart + k * step, legendY))
+        }
+        drawContext.canvas.nativeCanvas.drawText("多", legendStart + 5f * step + step * 0.8f, legendY, labelPaint)
     }
 }
