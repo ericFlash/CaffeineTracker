@@ -7,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -69,10 +69,10 @@ data class BottomNavItem(
 )
 
 private val bottomNavItems = listOf(
-    BottomNavItem("首页", Icons.Default.Home, Screen.Home),
-    BottomNavItem("历史", Icons.Default.List, Screen.History),
-    BottomNavItem("统计", Icons.Default.BarChart, Screen.Stats),
-    BottomNavItem("设置", Icons.Default.Settings, Screen.Settings),
+    BottomNavItem("首页", Icons.Rounded.Home, Screen.Home),
+    BottomNavItem("历史", Icons.Rounded.FormatListBulleted, Screen.History),
+    BottomNavItem("统计", Icons.Rounded.BarChart, Screen.Stats),
+    BottomNavItem("设置", Icons.Rounded.Settings, Screen.Settings),
 )
 
 @Composable
