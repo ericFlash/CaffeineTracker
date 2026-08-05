@@ -54,16 +54,16 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .background(ColorProvider(Color(0xFFFDF6F0)))
                     .clickable(actionStartActivity<MainActivity>()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "体内咖啡因",
-                    style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12.sp)
+                    text = "体内咖啡因 · ${data.todayText}",
+                    style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp)
                 )
-                Spacer(GlanceModifier.height(8.dp))
+                Spacer(GlanceModifier.height(3.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -75,23 +75,18 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                                 text = data.currentLevelText,
                                 style = TextStyle(
                                     color = ColorProvider(data.ringColor),
-                                    fontSize = 32.sp,
+                                    fontSize = 26.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
                             Text(
                                 text = " mg",
-                                style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12.sp)
+                                style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 10.sp)
                             )
                         }
                         Text(
-                            text = data.todayText,
-                            style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp)
-                        )
-                        Spacer(GlanceModifier.height(4.dp))
-                        Text(
                             text = data.metabolismText,
-                            style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 11.sp)
+                            style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 10.sp)
                         )
                     }
 
@@ -100,7 +95,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
-                            modifier = GlanceModifier.size(76.dp),
+                            modifier = GlanceModifier.size(46.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -108,20 +103,26 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                                 contentDescription = null,
                                 modifier = GlanceModifier.fillMaxSize()
                             )
-                            Text(
-                                text = data.percentText,
-                                style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = data.percentText,
+                                    style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "日限额",
+                                    style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 8.sp)
+                                )
+                            }
                         }
                     }
                 }
 
-                Spacer(GlanceModifier.height(8.dp))
+                Spacer(GlanceModifier.height(5.dp))
                 Text(
                     text = "───────────────",
-                    style = TextStyle(color = ColorProvider(Color(0xFFE0D5CC)), fontSize = 10.sp)
+                    style = TextStyle(color = ColorProvider(Color(0xFFE0D5CC)), fontSize = 9.sp)
                 )
-                Spacer(GlanceModifier.height(8.dp))
+                Spacer(GlanceModifier.height(5.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -134,17 +135,17 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         ) {
                             Text(
                                 text = hour.time,
-                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 11.sp)
+                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 9.sp)
                             )
-                            Spacer(GlanceModifier.height(3.dp))
+                            Spacer(GlanceModifier.height(2.dp))
                             Text(
                                 text = hour.dot,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             )
-                            Spacer(GlanceModifier.height(3.dp))
+                            Spacer(GlanceModifier.height(2.dp))
                             Text(
                                 text = hour.levelText,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
