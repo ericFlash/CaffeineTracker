@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,6 +42,7 @@ import com.caffeine.tracker.ui.stats.StatsViewModel
 import com.caffeine.tracker.ui.theme.CaffeineTrackerTheme
 import com.caffeine.tracker.worker.WidgetUpdateWorker
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -120,25 +122,13 @@ fun MainApp(settingsRepository: SettingsRepository) {
             composable(Screen.AddDrink.route) {
                 val vm: AddDrinkViewModel = hiltViewModel()
                 val context = androidx.compose.ui.platform.LocalContext.current
+                val scope = rememberCoroutineScope()
                 AddDrinkScreen(
                     viewModel = vm,
                     onSaved = {
-                        val ids = android.appwidget.AppWidgetManager
-                            .getInstance(context)
-                            .getAppWidgetIds(
-                                android.content.ComponentName(
-                                    context,
-                                    com.caffeine.tracker.widget.CaffeineWidgetReceiver::class.java
-                                )
-                            )
-                        val updateIntent = android.content.Intent(
-                            android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                        ).setPackage(context.packageName)
-                            .putExtra(
-                                android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS,
-                                ids
-                            )
-                        context.sendBroadcast(updateIntent)
+                        scope.launch {
+                            com.caffeine.tracker.widget.GlanceCaffeineWidget().updateAll(context)
+                        }
                         navController.popBackStack()
                     }
                 )
