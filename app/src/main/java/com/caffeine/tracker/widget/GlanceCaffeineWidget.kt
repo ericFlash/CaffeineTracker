@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.RectF
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
@@ -22,7 +21,6 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
@@ -31,7 +29,6 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.layout.size
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -99,37 +96,24 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
 
                     Column(
                         modifier = GlanceModifier.defaultWeight(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.End
                     ) {
-                        Box(
-                            modifier = GlanceModifier.size(46.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                provider = ImageProvider(data.ringBitmap),
-                                contentDescription = null,
-                                modifier = GlanceModifier.fillMaxSize()
-                            )
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = data.percentText,
-                                    style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                )
-                                Text(
-                                    text = "日限额",
-                                    style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 8.sp)
-                                )
-                            }
-                        }
+                        Text(
+                            text = data.percentText,
+                            style = TextStyle(color = ColorProvider(data.ringColor), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        )
                     }
                 }
 
-                Spacer(GlanceModifier.height(5.dp))
-                Text(
-                    text = "───────────────",
-                    style = TextStyle(color = ColorProvider(Color(0xFFE0D5CC)), fontSize = 9.sp)
+                Spacer(GlanceModifier.height(3.dp))
+                // 横向进度条：体内浓度占日限额的比例
+                Image(
+                    provider = ImageProvider(data.barBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.fillMaxWidth().height(12.dp),
+                    contentScale = ContentScale.FillBounds
                 )
-                Spacer(GlanceModifier.height(5.dp))
+                Spacer(GlanceModifier.height(4.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -186,7 +170,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         val progressFraction: Float,
         val percentText: String,
         val ringColor: Color,
-        val ringBitmap: Bitmap,
+        val barBitmap: Bitmap,
         val barsBitmap: Bitmap,
         val metabolismText: String,
         val hourly: List<HourData>
@@ -257,7 +241,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             frac >= 0.25f -> levelYellow
             else -> levelGreen
         }
-        val ringBitmap = buildRingBitmap(frac, ringColor, Color(0xFFE8E0D8))
+        val barBitmap = buildBarBitmap(frac, ringColor, Color(0xFFE8E0D8))
         val barsBitmap = buildBarsBitmap(hourly.map { it.second }, dailyLimit.toDouble())
 
         val hourlyData = hourly.map { (time, level) ->
@@ -275,11 +259,28 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             progressFraction = frac,
             percentText = "$pct%",
             ringColor = ringColor,
-            ringBitmap = ringBitmap,
+            barBitmap = barBitmap,
             barsBitmap = barsBitmap,
             metabolismText = metabolismText,
             hourly = hourlyData
         )
+    }
+
+    private fun buildBarBitmap(frac: Float, fillColor: Color, trackColor: Color): Bitmap {
+        val w = 1080
+        val h = 72
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        val corner = h / 2f
+        paint.color = trackColor.toArgb()
+        canvas.drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), corner, corner, paint)
+        val fillW = w * frac.coerceIn(0f, 1f)
+        if (fillW > 0f) {
+            paint.color = fillColor.toArgb()
+            canvas.drawRoundRect(0f, 0f, fillW, h.toFloat(), corner, corner, paint)
+        }
+        return bitmap
     }
 
     private fun buildBarsBitmap(levels: List<Double>, dailyLimit: Double): Bitmap {
@@ -301,27 +302,6 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             val top = h - barH
             paint.color = levelColor(level).toArgb()
             canvas.drawRoundRect(left, top, left + barWidth, h.toFloat(), barWidth / 2f, barWidth / 2f, paint)
-        }
-        return bitmap
-    }
-
-    private fun buildRingBitmap(frac: Float, ringColor: Color, trackColor: Color): Bitmap {
-        val sizePx = 192
-        val strokePx = 16f
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = strokePx
-        }
-        val inset = strokePx / 2f
-        val bounds = RectF(inset, inset, sizePx - inset, sizePx - inset)
-        paint.color = trackColor.toArgb()
-        canvas.drawOval(bounds, paint)
-        if (frac > 0f) {
-            paint.color = ringColor.toArgb()
-            paint.strokeCap = Paint.Cap.ROUND
-            canvas.drawArc(bounds, -90f, 360f * frac.coerceIn(0f, 1f), false, paint)
         }
         return bitmap
     }
