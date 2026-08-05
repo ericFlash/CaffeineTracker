@@ -79,13 +79,17 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                     onValueChange = { weight = it },
                     onValueChangeFinished = {
                         settingsRepository.bodyWeightKg = weight
+                        // 体重变化后自动按 5.7mg/kg 更新每日限额（200-600 区间）
+                        val recommended = (weight * 5.7f).coerceIn(200f, 600f)
+                        dailyLimit = recommended
+                        settingsRepository.dailyLimitMg = recommended.toDouble()
                     }
                 )
 
                 Spacer(Modifier.height(12.dp))
                 Text("每日安全限额: %.0f mg".format(dailyLimit),
                     style = MaterialTheme.typography.bodyMedium)
-                Text("基于体重推荐: %.0f mg  (%.0f kg × 5.7mg/kg)".format(recommendedLimit, weight),
+                Text("基于体重推荐: %.0f mg (%.0f kg × 5.7mg/kg)，已自动应用".format(recommendedLimit, weight),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 Spacer(Modifier.height(4.dp))
