@@ -121,12 +121,11 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     text = "───────────────",
                     style = TextStyle(color = ColorProvider(Color(0xFFE0D5CC)), fontSize = 10.sp)
                 )
-                Spacer(GlanceModifier.height(6.dp))
+                Spacer(GlanceModifier.height(8.dp))
 
                 Row(
-                    modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     data.hourly.take(6).forEach { hour ->
                         Column(
@@ -135,17 +134,17 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         ) {
                             Text(
                                 text = hour.time,
-                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 10.sp)
+                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 11.sp)
                             )
-                            Spacer(GlanceModifier.height(2.dp))
+                            Spacer(GlanceModifier.height(3.dp))
                             Text(
                                 text = hour.dot,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             )
-                            Spacer(GlanceModifier.height(2.dp))
+                            Spacer(GlanceModifier.height(3.dp))
                             Text(
                                 text = hour.levelText,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
