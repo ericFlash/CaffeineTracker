@@ -61,7 +61,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = GlanceModifier.weight(1f)) {
+                    Column(modifier = GlanceModifier.defaultWeight()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = data.currentLevelText,
@@ -83,7 +83,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     }
 
                     Column(
-                        modifier = GlanceModifier.weight(1f),
+                        modifier = GlanceModifier.defaultWeight(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator(
@@ -110,7 +110,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                 ) {
                     data.hourly.take(5).forEach { hour ->
                         Column(
-                            modifier = GlanceModifier.weight(1f),
+                            modifier = GlanceModifier.defaultWeight(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
