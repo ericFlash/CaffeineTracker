@@ -3,6 +3,7 @@ package com.caffeine.tracker.ui.adddrink
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.glance.appwidget.updateAll
 import com.caffeine.tracker.data.local.DrinkRecord
 import com.caffeine.tracker.data.model.DrinkCatalog
 import com.caffeine.tracker.data.model.DrinkSize
