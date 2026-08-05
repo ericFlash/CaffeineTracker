@@ -59,16 +59,16 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .padding(5.dp)
+                    .padding(3.dp)
                     .background(ColorProvider(Color(0xFFFDF6F0)))
                     .clickable(actionStartActivity<MainActivity>()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "体内咖啡因 · ${data.todayText}",
-                    style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp)
+                    style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 10.sp)
                 )
-                Spacer(GlanceModifier.height(2.dp))
+                Spacer(GlanceModifier.height(1.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -80,18 +80,18 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                                 text = data.currentLevelText,
                                 style = TextStyle(
                                     color = ColorProvider(data.ringColor),
-                                    fontSize = 26.sp,
+                                    fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
                             Text(
                                 text = " mg",
-                                style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 10.sp)
+                                style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 9.sp)
                             )
                         }
                         Text(
                             text = data.metabolismText,
-                            style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 10.sp)
+                            style = TextStyle(color = ColorProvider(Color(0xFF795548)), fontSize = 9.sp)
                         )
                     }
 
@@ -106,15 +106,15 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                     }
                 }
 
-                Spacer(GlanceModifier.height(2.dp))
+                Spacer(GlanceModifier.height(1.dp))
                 // 横向进度条：体内浓度占日限额的比例
                 Image(
                     provider = ImageProvider(data.barBitmap),
                     contentDescription = null,
-                    modifier = GlanceModifier.fillMaxWidth().height(14.dp),
+                    modifier = GlanceModifier.fillMaxWidth().height(12.dp),
                     contentScale = ContentScale.FillBounds
                 )
-                Spacer(GlanceModifier.height(3.dp))
+                Spacer(GlanceModifier.height(2.dp))
 
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -127,12 +127,12 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         ) {
                             Text(
                                 text = hour.time,
-                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 9.sp)
+                                style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 8.sp)
                             )
                         }
                     }
                 }
-                Spacer(GlanceModifier.height(3.dp))
+                Spacer(GlanceModifier.height(2.dp))
                 // 未来 6 小时：影响程度 emoji
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -145,12 +145,12 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         ) {
                             Text(
                                 text = hour.emoji,
-                                style = TextStyle(fontSize = 11.sp)
+                                style = TextStyle(fontSize = 10.sp)
                             )
                         }
                     }
                 }
-                Spacer(GlanceModifier.height(2.dp))
+                Spacer(GlanceModifier.height(1.dp))
                 // 未来 6 小时：预测浓度（渐变配色）
                 Row(
                     modifier = GlanceModifier.fillMaxWidth(),
@@ -163,7 +163,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                         ) {
                             Text(
                                 text = hour.levelText,
-                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                style = TextStyle(color = ColorProvider(hour.color), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
