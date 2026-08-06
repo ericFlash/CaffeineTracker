@@ -21,6 +21,9 @@ class DrinkRepository @Inject constructor(
     suspend fun getRecordsForDayOnce(startOfDay: Long, endOfDay: Long): List<DrinkRecord> =
         drinkDao.getRecordsForDayOnce(startOfDay, endOfDay)
 
+    suspend fun getRecordsSince(since: Long): List<DrinkRecord> =
+        drinkDao.getRecordsSince(since)
+
     suspend fun insert(record: DrinkRecord) = drinkDao.insert(record)
 
     suspend fun delete(record: DrinkRecord) = drinkDao.delete(record)
