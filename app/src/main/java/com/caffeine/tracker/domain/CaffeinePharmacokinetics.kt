@@ -8,6 +8,10 @@ object CaffeinePharmacokinetics {
 
     const val SLEEP_SAFE_MG = 50.0
 
+    // 计算体内残留咖啡因时回溯的历史窗口（小时）。
+    // 半衰期约 5h，48h 后残留可忽略；用于避免跨午夜时把昨日记录漏算导致清零。
+    const val RESIDUAL_WINDOW_HOURS = 48L
+
     fun calculateCurrentLevel(
         records: List<DrinkRecord>,
         halfLifeHours: Double = 5.0,
@@ -26,6 +30,29 @@ object CaffeinePharmacokinetics {
             val elapsedMs = (now - timestamps[i]).toDouble().coerceAtLeast(0.0)
             caffeineMgs[i] * exp(-lambda * elapsedMs)
         }
+    }
+
+    // 计算某时刻之前摄入、到该时刻仍未代谢完的残留量。
+    // 用于"今日可用限额 = 日限额 − 今日零点结转残留"，避免把今日已喝的重复计入。
+    fun calculateCarryoverLevel(
+        records: List<DrinkRecord>,
+        halfLifeHours: Double = 5.0,
+        atTime: Long
+    ): Double = calculateCarryoverLevel(
+        records.map { it.caffeineMg }, records.map { it.timestamp }, halfLifeHours, atTime
+    )
+
+    fun calculateCarryoverLevel(
+        caffeineMgs: List<Double>,
+        timestamps: List<Long>,
+        halfLifeHours: Double,
+        atTime: Long
+    ): Double {
+        val idx = caffeineMgs.indices.filter { timestamps[it] <= atTime }
+        if (idx.isEmpty()) return 0.0
+        return calculateCurrentLevel(
+            idx.map { caffeineMgs[it] }, idx.map { timestamps[it] }, halfLifeHours, atTime
+        )
     }
 
     data class CurvePoint(
