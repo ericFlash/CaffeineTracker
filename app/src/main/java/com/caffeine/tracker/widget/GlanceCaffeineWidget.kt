@@ -191,6 +191,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         var totalToday = 0.0
         var halfLife = 5.0
         var dailyLimit = 400f
+        var carryoverAtStart = 0.0
         val hourly = mutableListOf<Pair<String, Double>>()
         val records = mutableListOf<Pair<Double, Long>>()
         var metabolismText = "--"
@@ -207,18 +208,20 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             }
             val startOfDay = cal.timeInMillis
             val endOfDay = startOfDay + 86_400_000L
+            val residualStart = now - CaffeinePharmacokinetics.RESIDUAL_WINDOW_HOURS * 3_600_000L
             val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
             halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
             dailyLimit = prefs.getFloat("daily_limit", 400f)
             val drinkRecords = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
-            records.addAll(drinkRecords.map { it.caffeineMg to it.timestamp })
+            val residualRecords = db.drinkDao().getRecordsSince(residualStart)
+            records.addAll(residualRecords.map { it.caffeineMg to it.timestamp })
             currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(
                 records.map { it.first }, records.map { it.second }, halfLife, now
             )
             totalToday = drinkRecords.sumOf { it.caffeineMg }
 
             val sleepSafeMs = CaffeinePharmacokinetics.estimatedTimeToSleepSafe(
-                drinkRecords, halfLife, now
+                residualRecords, halfLife, now
             )
             metabolismText = if (sleepSafeMs <= 0) {
                 "已低于安全线"
@@ -227,6 +230,11 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                 val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
                 "预计 ${timeFmt.format(eta)} 可安心入睡"
             }
+
+            // 今日零点结转残留：用于扣减今日可用限额
+            carryoverAtStart = CaffeinePharmacokinetics.calculateCarryoverLevel(
+                records.map { it.first }, records.map { it.second }, halfLife, startOfDay
+            )
 
             val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
             for (h in 0 until 6) {
@@ -240,6 +248,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
             val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
             currentLevel = prefs.getFloat("widget_current_level", 0f).toDouble()
             totalToday = prefs.getFloat("widget_today_total", 0f).toDouble()
+            carryoverAtStart = prefs.getFloat("widget_carryover", 0f).toDouble()
         }
 
         val frac = (currentLevel / dailyLimit.toDouble()).toFloat().coerceIn(0f, 1f)
@@ -266,7 +275,10 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         return WidgetData(
             currentLevel = currentLevel,
             currentLevelText = "%.0f".format(currentLevel),
-            todayText = "今日 %.0f/%.0f".format(totalToday, dailyLimit),
+            todayText = "今日 %.0f/%.0f".format(
+                totalToday,
+                (dailyLimit.toDouble() - carryoverAtStart).coerceAtLeast(0.0)
+            ),
             progressFraction = frac,
             percentText = "$pct%",
             ringColor = ringColor,
