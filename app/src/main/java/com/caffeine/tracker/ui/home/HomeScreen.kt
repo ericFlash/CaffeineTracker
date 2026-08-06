@@ -103,8 +103,8 @@ private fun HeaderCard(state: HomeUiState) {
                     Text("%.0f mg".format(state.totalToday), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 }
                 Column {
-                    Text("日限额", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
-                    Text("%.0f mg".format(state.dailyLimit), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Text("可用限额", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
+                    Text("%.0f mg".format(state.availableDailyLimit), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 }
                 Column {
                     Text("睡眠安全", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
