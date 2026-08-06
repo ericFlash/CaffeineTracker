@@ -32,17 +32,23 @@ class WidgetUpdateWorker @AssistedInject constructor(
         }
         val startOfDay = cal.timeInMillis
         val endOfDay = startOfDay + 86_400_000L
+        val residualStart = now - CaffeinePharmacokinetics.RESIDUAL_WINDOW_HOURS * 3_600_000L
 
         val prefs = applicationContext.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
         val halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
 
-        val records = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
-        val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(records, halfLife, now)
-        val totalToday = records.sumOf { it.caffeineMg }
+        val todayRecords = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
+        val residualRecords = db.drinkDao().getRecordsSince(residualStart)
+        val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(residualRecords, halfLife, now)
+        val totalToday = todayRecords.sumOf { it.caffeineMg }
+        val carryoverAtStart = CaffeinePharmacokinetics.calculateCarryoverLevel(
+            residualRecords, halfLife, startOfDay
+        )
 
         prefs.edit()
             .putFloat("widget_current_level", currentLevel.toFloat())
             .putFloat("widget_today_total", totalToday.toFloat())
+            .putFloat("widget_carryover", carryoverAtStart.toFloat())
             .apply()
 
         return Result.success()
