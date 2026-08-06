@@ -1,6 +1,7 @@
 package com.caffeine.tracker.ui.stats
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -188,6 +189,22 @@ private fun MonthHeatmap(
     val outlineColor = MaterialTheme.colorScheme.primary
     val textArgb = textColor.toArgb()
     val density = LocalDensity.current.density
+    val darkTheme = isSystemInDarkTheme()
+
+    // 色块底色与数值渐变色随主题切换：浅色主题用暖米色系，深色主题用低亮度咖啡色系，
+    // 保证 onSurface 文字（浅色主题深字 / 深色主题浅字）在色块上均可读。
+    val cellFills = if (darkTheme) listOf(
+        Color(0xFF2A2421), Color(0xFF3D3024), Color(0xFF4D3826),
+        Color(0xFF5A3C24), Color(0xFF5E3224), Color(0xFF5A2620)
+    ) else listOf(
+        Color(0xFFF1EBE3), Color(0xFFF9E7CF), Color(0xFFF7DFB9),
+        Color(0xFFF3D2A4), Color(0xFFF0C79A), Color(0xFFF0C4BE)
+    )
+    val gradColors = if (darkTheme) listOf(
+        Color(0xFFA8C8A4), Color(0xFFE6C26A), Color(0xFFEFA968), Color(0xFFE0735A)
+    ) else listOf(
+        Color(0xFF8CAF8A), Color(0xFFC7A34A), Color(0xFFD98E4A), Color(0xFFC2563C)
+    )
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
@@ -228,12 +245,12 @@ private fun MonthHeatmap(
             val row = idx / 7
             val ratio = if (dailyLimit > 0) (day.totalMg / dailyLimit).toFloat() else 0f
             val fill = when {
-                day.totalMg <= 0 -> Color(0xFFF1EBE3)
-                ratio > 1f -> Color(0xFFF0C4BE)
-                ratio > 0.75f -> Color(0xFFF0C79A)
-                ratio > 0.5f -> Color(0xFFF3D2A4)
-                ratio > 0.25f -> Color(0xFFF7DFB9)
-                else -> Color(0xFFF9E7CF)
+                day.totalMg <= 0 -> cellFills[0]
+                ratio > 1f -> cellFills[5]
+                ratio > 0.75f -> cellFills[4]
+                ratio > 0.5f -> cellFills[3]
+                ratio > 0.25f -> cellFills[2]
+                else -> cellFills[1]
             }
             val x = sidePad + col * (cellW + gap)
             val y = headerH + row * (cellH + gap)
@@ -268,7 +285,7 @@ private fun MonthHeatmap(
                 drawContext.canvas.nativeCanvas.drawText("—", centerX, y + cellH * 0.78f, emptyPaint)
             } else {
                 val valuePaint = android.graphics.Paint().apply {
-                    color = gradientColor(day.totalMg, maxVal).toArgb()
+                    color = gradientColor(day.totalMg, maxVal, gradColors).toArgb()
                     textSize = valueFont
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
@@ -279,10 +296,7 @@ private fun MonthHeatmap(
         // 底部图例：少 -> 多 -> 超限
         val legendY = size.height - legendH / 2f + 4f * density
         val step = 22f * density
-        val buckets = listOf(
-            Color(0xFFF1EBE3), Color(0xFFF9E7CF), Color(0xFFF7DFB9),
-            Color(0xFFF3D2A4), Color(0xFFF0C79A), Color(0xFFF0C4BE)
-        )
+        val buckets = cellFills
         val centerX = size.width / 2f
         val legendStart = centerX - step * 2.5f
         val labelPaint = android.graphics.Paint().apply {
@@ -297,12 +311,12 @@ private fun MonthHeatmap(
     }
 }
 
-private fun gradientColor(value: Double, maxVal: Double): Color {
+private fun gradientColor(value: Double, maxVal: Double, colors: List<Color>): Color {
     val t = (value / maxVal.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
-    val green = Color(0xFF8CAF8A)
-    val yellow = Color(0xFFC7A34A)
-    val orange = Color(0xFFD98E4A)
-    val red = Color(0xFFC2563C)
+    val green = colors[0]
+    val yellow = colors[1]
+    val orange = colors[2]
+    val red = colors[3]
     return when {
         t < 0.34f -> lerp(green, yellow, t / 0.34f)
         t < 0.67f -> lerp(yellow, orange, (t - 0.34f) / 0.33f)
