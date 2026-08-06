@@ -25,6 +25,7 @@ data class HomeUiState(
     val currentLevel: Double = 0.0,
     val totalToday: Double = 0.0,
     val dailyLimit: Double = 400.0,
+    val availableDailyLimit: Double = 400.0,
     val timeToSleepSafe: String = "",
     val curveStartTime: Long = 0L,
     val curveEndTime: Long = 0L,
@@ -57,22 +58,30 @@ class HomeViewModel @Inject constructor(
                 val halfLife = settingsRepository.halfLifeHours
                 val limit = settingsRepository.dailyLimitMg
 
+                // 体内残留量需回溯历史窗口，避免跨午夜把昨日记录漏算导致清零
+                val residualStart = now - CaffeinePharmacokinetics.RESIDUAL_WINDOW_HOURS * 3_600_000L
+                val residualRecords = drinkRepository.getRecordsSince(residualStart)
+
                 val curveStart = if (records.isEmpty()) now
                     else records.minOf { it.timestamp }
                 val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(
-                    records, halfLife, now
+                    residualRecords, halfLife, now
                 )
 
                 val sleepTtzMs = CaffeinePharmacokinetics.estimatedTimeToSleepSafe(
-                    records, halfLife, now
+                    residualRecords, halfLife, now
                 )
-                val latestRecord = records.maxOfOrNull { it.timestamp } ?: now
+                val latestRecord = residualRecords.maxOfOrNull { it.timestamp } ?: now
                 val curveEnd = maxOf(latestRecord + sleepTtzMs, now + 3600_000L)
 
                 val curvePoints = CaffeinePharmacokinetics.generateCurve(
-                    records, halfLife, curveStart, curveEnd
+                    residualRecords, halfLife, curveStart, curveEnd
                 )
                 val totalToday = records.sumOf { it.caffeineMg }
+                val carryoverAtStart = CaffeinePharmacokinetics.calculateCarryoverLevel(
+                    residualRecords, halfLife, startOfDay
+                )
+                val availableLimit = (limit - carryoverAtStart).coerceAtLeast(0.0)
 
                 val timeText = if (sleepTtzMs <= 0) "已低于安全线 ✓"
                 else {
@@ -88,6 +97,7 @@ class HomeViewModel @Inject constructor(
                     currentLevel = currentLevel,
                     totalToday = totalToday,
                     dailyLimit = limit,
+                    availableDailyLimit = availableLimit,
                     timeToSleepSafe = timeText,
                     curveStartTime = curveStart,
                     curveEndTime = curveEnd,
