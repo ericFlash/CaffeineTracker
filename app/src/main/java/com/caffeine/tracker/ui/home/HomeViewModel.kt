@@ -1,21 +1,19 @@
 package com.caffeine.tracker.ui.home
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.glance.appwidget.updateAll
 import com.caffeine.tracker.data.local.DrinkRecord
 import com.caffeine.tracker.data.repository.DrinkRepository
 import com.caffeine.tracker.data.repository.SettingsRepository
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
-import com.caffeine.tracker.widget.GlanceCaffeineWidget
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.caffeine.tracker.widget.WidgetRefresher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
 
@@ -35,7 +33,7 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val drinkRepository: DrinkRepository,
     private val settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context,
+    private val widgetRefresher: WidgetRefresher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -110,8 +108,12 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 drinkRepository.delete(record)
-                GlanceCaffeineWidget().updateAll(context)
-            } catch (_: Exception) { }
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (_: Exception) {
+                return@launch
+            }
+            widgetRefresher.refreshAsync()
         }
     }
 }
