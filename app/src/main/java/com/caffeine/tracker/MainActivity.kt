@@ -49,6 +49,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
+    @Inject
+    lateinit var widgetRefresher: com.caffeine.tracker.widget.WidgetRefresher
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -56,7 +59,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CaffeineTrackerTheme {
-                MainApp(settingsRepository)
+                MainApp(settingsRepository, widgetRefresher)
             }
         }
     }
@@ -76,7 +79,10 @@ private val bottomNavItems = listOf(
 )
 
 @Composable
-fun MainApp(settingsRepository: SettingsRepository) {
+fun MainApp(
+    settingsRepository: SettingsRepository,
+    widgetRefresher: com.caffeine.tracker.widget.WidgetRefresher,
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -133,7 +139,10 @@ fun MainApp(settingsRepository: SettingsRepository) {
                 StatsScreen(viewModel = vm)
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(settingsRepository = settingsRepository)
+                SettingsScreen(
+                    settingsRepository = settingsRepository,
+                    onSettingsChanged = { widgetRefresher.refreshAsync() }
+                )
             }
         }
     }
