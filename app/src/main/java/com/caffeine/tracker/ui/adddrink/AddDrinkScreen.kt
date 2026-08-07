@@ -28,12 +28,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.launch
 
 @Composable
 fun AddDrinkScreen(
@@ -41,6 +43,7 @@ fun AddDrinkScreen(
     onSaved: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -98,8 +101,10 @@ fun AddDrinkScreen(
 
             Button(
                 onClick = {
-                    viewModel.saveRecord()
-                    onSaved()
+                    scope.launch {
+                        viewModel.saveRecord()
+                        onSaved()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
