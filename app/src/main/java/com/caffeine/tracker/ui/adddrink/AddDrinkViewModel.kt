@@ -1,20 +1,20 @@
 package com.caffeine.tracker.ui.adddrink
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.glance.appwidget.updateAll
 import com.caffeine.tracker.data.local.DrinkRecord
 import com.caffeine.tracker.data.model.DrinkCatalog
 import com.caffeine.tracker.data.model.DrinkSize
 import com.caffeine.tracker.data.model.DrinkTemplate
 import com.caffeine.tracker.data.repository.DrinkRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.caffeine.tracker.widget.WidgetRefresher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
 data class AddDrinkUiState(
@@ -29,7 +29,7 @@ data class AddDrinkUiState(
 @HiltViewModel
 class AddDrinkViewModel @Inject constructor(
     private val drinkRepository: DrinkRepository,
-    @ApplicationContext private val context: Context,
+    private val widgetRefresher: WidgetRefresher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddDrinkUiState())
@@ -67,7 +67,9 @@ class AddDrinkViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(calculatedCaffeine = drink.defaultCaffeineMg * ratio)
     }
 
-    fun saveRecord() {
+    // suspend：调用方在协程中调用，可确保数据落库后再执行后续操作（如返回上一页）。
+    // 小组件刷新在应用级作用域中触发，避免页面 pop 后 viewModelScope 被取消导致刷新中断。
+    suspend fun saveRecord() {
         val drink = _uiState.value.selectedDrink ?: return
         val caffeine = _uiState.value.calculatedCaffeine
         val volume = if (_uiState.value.showCustomVolume) {
@@ -75,8 +77,8 @@ class AddDrinkViewModel @Inject constructor(
         } else {
             _uiState.value.selectedSize?.volumeMl ?: drink.standardVolumeMl
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
+        try {
+            withContext(Dispatchers.IO) {
                 drinkRepository.insert(
                     DrinkRecord(
                         drinkName = drink.name,
@@ -86,8 +88,12 @@ class AddDrinkViewModel @Inject constructor(
                         timestamp = System.currentTimeMillis(),
                     )
                 )
-                com.caffeine.tracker.widget.GlanceCaffeineWidget().updateAll(context)
-            } catch (_: Exception) { }
+            }
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (_: Exception) {
+            return
         }
+        widgetRefresher.refreshAsync()
     }
 }
