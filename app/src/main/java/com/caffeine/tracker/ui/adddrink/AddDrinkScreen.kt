@@ -102,8 +102,7 @@ fun AddDrinkScreen(
             Button(
                 onClick = {
                     scope.launch {
-                        viewModel.saveRecord()
-                        onSaved()
+                        if (viewModel.saveRecord()) onSaved()
                     }
                 },
                 enabled = !state.saving,
