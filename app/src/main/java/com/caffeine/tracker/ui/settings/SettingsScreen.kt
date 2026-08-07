@@ -37,7 +37,10 @@ private const val DEFAULT_HALF_LIFE = 5.0f
 private const val DEFAULT_LIMIT = 400f
 
 @Composable
-fun SettingsScreen(settingsRepository: SettingsRepository) {
+fun SettingsScreen(
+    settingsRepository: SettingsRepository,
+    onSettingsChanged: () -> Unit = {},
+) {
     var halfLife by remember { mutableFloatStateOf(settingsRepository.halfLifeHours.toFloat()) }
     var dailyLimit by remember { mutableFloatStateOf(settingsRepository.dailyLimitMg.toFloat()) }
     var weight by remember { mutableFloatStateOf(settingsRepository.bodyWeightKg) }
@@ -68,7 +71,10 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                     value = halfLife,
                     valueRange = 2f..12f,
                     onValueChange = { halfLife = it },
-                    onValueChangeFinished = { settingsRepository.halfLifeHours = halfLife.toDouble() }
+                    onValueChangeFinished = {
+                        settingsRepository.halfLifeHours = halfLife.toDouble()
+                        onSettingsChanged()
+                    }
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -83,6 +89,7 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                         val recommended = (weight * 5.7f).coerceIn(200f, 600f)
                         dailyLimit = recommended
                         settingsRepository.dailyLimitMg = recommended.toDouble()
+                        onSettingsChanged()
                     }
                 )
 
@@ -96,7 +103,10 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                 Slider(
                     value = dailyLimit,
                     onValueChange = { dailyLimit = it },
-                    onValueChangeFinished = { settingsRepository.dailyLimitMg = dailyLimit.toDouble() },
+                    onValueChangeFinished = {
+                        settingsRepository.dailyLimitMg = dailyLimit.toDouble()
+                        onSettingsChanged()
+                    },
                     valueRange = 100f..1000f,
                     modifier = Modifier.fillMaxWidth(),
                     colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
@@ -126,6 +136,7 @@ fun SettingsScreen(settingsRepository: SettingsRepository) {
                 settingsRepository.bodyWeightKg = DEFAULT_WEIGHT
                 settingsRepository.halfLifeHours = DEFAULT_HALF_LIFE.toDouble()
                 settingsRepository.dailyLimitMg = DEFAULT_LIMIT.toDouble()
+                onSettingsChanged()
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
