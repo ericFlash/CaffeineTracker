@@ -23,6 +23,9 @@ interface DrinkDao {
     @Query("SELECT * FROM drink_records WHERE timestamp >= :since ORDER BY timestamp ASC")
     suspend fun getRecordsSince(since: Long): List<DrinkRecord>
 
+    @Query("SELECT * FROM drink_records WHERE timestamp >= :since ORDER BY timestamp ASC")
+    fun getRecordsSinceFlow(since: Long): Flow<List<DrinkRecord>>
+
     @Query("SELECT * FROM drink_records ORDER BY timestamp DESC")
     fun getAllRecords(): Flow<List<DrinkRecord>>
 
