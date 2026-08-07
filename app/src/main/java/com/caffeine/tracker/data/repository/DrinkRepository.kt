@@ -24,6 +24,9 @@ class DrinkRepository @Inject constructor(
     suspend fun getRecordsSince(since: Long): List<DrinkRecord> =
         drinkDao.getRecordsSince(since)
 
+    fun getRecordsSinceFlow(since: Long): Flow<List<DrinkRecord>> =
+        drinkDao.getRecordsSinceFlow(since)
+
     suspend fun insert(record: DrinkRecord) = drinkDao.insert(record)
 
     suspend fun delete(record: DrinkRecord) = drinkDao.delete(record)
