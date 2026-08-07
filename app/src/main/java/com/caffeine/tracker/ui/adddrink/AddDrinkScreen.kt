@@ -106,10 +106,11 @@ fun AddDrinkScreen(
                         onSaved()
                     }
                 },
+                enabled = !state.saving,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("记录摄入", modifier = Modifier.padding(8.dp))
+                Text(if (state.saving) "保存中…" else "记录摄入", modifier = Modifier.padding(8.dp))
             }
         }
     }
