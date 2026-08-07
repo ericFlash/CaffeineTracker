@@ -71,8 +71,9 @@ class AddDrinkViewModel @Inject constructor(
     // suspend：调用方在协程中调用，可确保数据落库 + 小组件刷新完成后再执行后续操作（如返回上一页）。
     // 使用 refresh()（可等待）而非 refreshAsync()（fire-and-forget），
     // 确保 onSaved()/popBackStack 发生在 widget 已更新之后，避免首次 Glance 冷启动时刷新未完成。
-    suspend fun saveRecord() {
-        val drink = _uiState.value.selectedDrink ?: return
+    // 返回 true 表示保存成功，false 表示失败（调用方据此决定是否 pop）。
+    suspend fun saveRecord(): Boolean {
+        val drink = _uiState.value.selectedDrink ?: return false
         val caffeine = _uiState.value.calculatedCaffeine
         val volume = if (_uiState.value.showCustomVolume) {
             _uiState.value.customVolumeMl.toIntOrNull() ?: (_uiState.value.selectedSize?.volumeMl ?: drink.standardVolumeMl)
@@ -80,6 +81,7 @@ class AddDrinkViewModel @Inject constructor(
             _uiState.value.selectedSize?.volumeMl ?: drink.standardVolumeMl
         }
         _uiState.value = _uiState.value.copy(saving = true)
+        var success = false
         try {
             withContext(Dispatchers.IO) {
                 drinkRepository.insert(
@@ -92,13 +94,15 @@ class AddDrinkViewModel @Inject constructor(
                     )
                 )
             }
+            widgetRefresher.refresh()
+            success = true
         } catch (ce: CancellationException) {
             throw ce
         } catch (_: Exception) {
+            return false
+        } finally {
             _uiState.value = _uiState.value.copy(saving = false)
-            return
         }
-        widgetRefresher.refresh()
-        _uiState.value = _uiState.value.copy(saving = false)
+        return success
     }
 }
