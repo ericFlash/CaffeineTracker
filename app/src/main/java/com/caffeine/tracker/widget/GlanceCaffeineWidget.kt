@@ -5,6 +5,8 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
@@ -37,10 +39,15 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.caffeine.tracker.MainActivity
 import com.caffeine.tracker.data.local.CaffeineDatabase
+import com.caffeine.tracker.data.local.DrinkRecord
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 
 class GlanceCaffeineWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Exact
@@ -53,9 +60,12 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
     }
     @OptIn(ExperimentalGlanceApi::class)
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val c = colorsFor(context.applicationContext)
-        val data = loadData(context.applicationContext, c)
+        val app = context.applicationContext
+        val c = colorsFor(app)
+        val flow = widgetDataFlow(app, c)
+        val initial = flow.first()
         provideContent {
+            val data by flow.collectAsState(initial)
             Column(modifier = GlanceModifier.fillMaxSize().padding(5.dp).background(ColorProvider(c.bg)).clickable(actionStartActivity<MainActivity>()), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "体内咖啡因 · ${data.todayText}", style = TextStyle(color = ColorProvider(c.muted), fontSize = 11.sp))
                 Spacer(GlanceModifier.height(2.dp))
@@ -101,51 +111,42 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
     }
     private data class HourData(val time: String, val emoji: String, val levelText: String, val color: Color)
     private data class WidgetData(val currentLevel: Double, val currentLevelText: String, val todayText: String, val progressFraction: Float, val percentText: String, val ringColor: Color, val barBitmap: Bitmap, val metabolismText: String, val hourly: List<HourData>)
-    private suspend fun loadData(context: Context, c: WC): WidgetData {
-        var currentLevel = 0.0
-        var totalToday = 0.0
-        var halfLife = 5.0
-        var dailyLimit = 400f
-        var carryoverAtStart = 0.0
-        val hourly = mutableListOf<Pair<String, Double>>()
-        val records = mutableListOf<Pair<Double, Long>>()
-        var metabolismText = "--"
-        try {
-            val db = CaffeineDatabase.getInstance(context)
-            val now = System.currentTimeMillis()
-            val cal = Calendar.getInstance().apply { timeInMillis = now; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
-            val startOfDay = cal.timeInMillis
-            val endOfDay = startOfDay + 86_400_000L
-            val residualStart = now - CaffeinePharmacokinetics.RESIDUAL_WINDOW_HOURS * 3_600_000L
-            val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
-            halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
-            dailyLimit = prefs.getFloat("daily_limit", 400f)
-            val drinkRecords = db.drinkDao().getRecordsForDayOnce(startOfDay, endOfDay)
-            val residualRecords = db.drinkDao().getRecordsSince(residualStart)
-            records.addAll(residualRecords.map { it.caffeineMg to it.timestamp })
-            currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(records.map { it.first }, records.map { it.second }, halfLife, now)
-            totalToday = drinkRecords.sumOf { it.caffeineMg }
-            val sleepSafeMs = CaffeinePharmacokinetics.estimatedTimeToSleepSafe(residualRecords, halfLife, now)
-            metabolismText = if (sleepSafeMs <= 0) "已低于安全线" else { val eta = now + sleepSafeMs; val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault()); "预计 ${timeFmt.format(eta)} 可安心入睡" }
-            carryoverAtStart = CaffeinePharmacokinetics.calculateCarryoverLevel(records.map { it.first }, records.map { it.second }, halfLife, startOfDay)
-            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-            for (h in 0 until 6) {
-                val futureTime = now + h * 3600_000L
-                val level = CaffeinePharmacokinetics.calculateCurrentLevel(records.map { it.first }, records.map { it.second }, halfLife, futureTime)
-                hourly.add(sdf.format(futureTime) to level)
-            }
-        } catch (_: Exception) {
-            val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
-            currentLevel = prefs.getFloat("widget_current_level", 0f).toDouble()
-            totalToday = prefs.getFloat("widget_today_total", 0f).toDouble()
-            carryoverAtStart = prefs.getFloat("widget_carryover", 0f).toDouble()
+    // 组合内订阅的 Flow：今日记录 + 48h 残留记录变化时自动重算并触发重组刷新
+    private fun widgetDataFlow(context: Context, c: WC): Flow<WidgetData> {
+        val db = CaffeineDatabase.getInstance(context)
+        val prefs = context.getSharedPreferences("caffeine_prefs", Context.MODE_PRIVATE)
+        val halfLife = prefs.getFloat("half_life", 5.0f).toDouble()
+        val dailyLimit = prefs.getFloat("daily_limit", 400f)
+        val now = System.currentTimeMillis()
+        val startOfDay = Calendar.getInstance().apply { timeInMillis = now; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
+        val endOfDay = startOfDay + 86_400_000L
+        val residualStart = now - CaffeinePharmacokinetics.RESIDUAL_WINDOW_HOURS * 3_600_000L
+        return combine(
+            db.drinkDao().getRecordsForDay(startOfDay, endOfDay),
+            db.drinkDao().getRecordsSinceFlow(residualStart),
+        ) { today, residual ->
+            buildWidgetData(today, residual, halfLife, dailyLimit, c, now, startOfDay)
+        }.distinctUntilChanged()
+    }
+    private fun buildWidgetData(today: List<DrinkRecord>, residual: List<DrinkRecord>, halfLife: Double, dailyLimit: Float, c: WC, now: Long, startOfDay: Long): WidgetData {
+        val pairs = residual.map { it.caffeineMg to it.timestamp }
+        val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(pairs.map { it.first }, pairs.map { it.second }, halfLife, now)
+        val totalToday = today.sumOf { it.caffeineMg }
+        val sleepSafeMs = CaffeinePharmacokinetics.estimatedTimeToSleepSafe(residual, halfLife, now)
+        val metabolismText = if (sleepSafeMs <= 0) "已低于安全线" else { val eta = now + sleepSafeMs; val fmt = SimpleDateFormat("HH:mm", Locale.getDefault()); "预计 ${fmt.format(eta)} 可安心入睡" }
+        val carryover = CaffeinePharmacokinetics.calculateCarryoverLevel(pairs.map { it.first }, pairs.map { it.second }, halfLife, startOfDay)
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val hourly = (0 until 6).map { h ->
+            val f = now + h * 3600_000L
+            val lvl = CaffeinePharmacokinetics.calculateCurrentLevel(pairs.map { it.first }, pairs.map { it.second }, halfLife, f)
+            sdf.format(f) to lvl
         }
         val frac = (currentLevel / dailyLimit.toDouble()).toFloat().coerceIn(0f, 1f)
         val pct = (frac * 100).toInt()
-        val ringColor = when { frac >= 0.75f -> c.red; frac >= 0.5f -> c.orange; frac >= 0.25f -> c.yellow; else -> c.green }
-        val barBitmap = buildBarBitmap(frac, ringColor, c.track)
-        val hourlyData = hourly.map { (time, level) -> HourData(time = time, emoji = impactEmoji(level), levelText = "%.0f".format(level), color = gradientColor(level, dailyLimit.toDouble(), c)) }
-        return WidgetData(currentLevel = currentLevel, currentLevelText = "%.0f".format(currentLevel), todayText = "今日 %.0f/%.0f".format(totalToday, (dailyLimit.toDouble() - carryoverAtStart).coerceAtLeast(0.0)), progressFraction = frac, percentText = "$pct%", ringColor = ringColor, barBitmap = barBitmap, metabolismText = metabolismText, hourly = hourlyData)
+        val ring = when { frac >= 0.75f -> c.red; frac >= 0.5f -> c.orange; frac >= 0.25f -> c.yellow; else -> c.green }
+        val bar = buildBarBitmap(frac, ring, c.track)
+        val hourlyData = hourly.map { (t, lvl) -> HourData(t, impactEmoji(lvl), "%.0f".format(lvl), gradientColor(lvl, dailyLimit.toDouble(), c)) }
+        return WidgetData(currentLevel, "%.0f".format(currentLevel), "今日 %.0f/%.0f".format(totalToday, (dailyLimit.toDouble() - carryover).coerceAtLeast(0.0)), frac, "$pct%", ring, bar, metabolismText, hourlyData)
     }
     private fun buildBarBitmap(frac: Float, fillColor: Color, trackColor: Color): Bitmap {
         val w = 1500; val h = 60
