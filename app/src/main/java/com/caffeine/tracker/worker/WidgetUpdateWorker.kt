@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.caffeine.tracker.data.local.CaffeineDatabase
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
+import com.caffeine.tracker.widget.WidgetRefresher
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.Calendar
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit
 class WidgetUpdateWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
+    private val widgetRefresher: WidgetRefresher,
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -50,6 +52,10 @@ class WidgetUpdateWorker @AssistedInject constructor(
             .putFloat("widget_today_total", totalToday.toFloat())
             .putFloat("widget_carryover", carryoverAtStart.toFloat())
             .apply()
+
+        // 真正触发小组件视觉刷新：周期 Worker 是刷新的可靠兜底，
+        // 即便即时刷新失败，最多 15 分钟后也会重新渲染。
+        widgetRefresher.refresh()
 
         return Result.success()
     }
