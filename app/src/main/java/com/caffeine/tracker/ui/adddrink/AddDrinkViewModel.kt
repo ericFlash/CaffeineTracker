@@ -24,6 +24,7 @@ data class AddDrinkUiState(
     val customVolumeMl: String = "",
     val calculatedCaffeine: Double = 0.0,
     val showCustomVolume: Boolean = false,
+    val saving: Boolean = false,
 )
 
 @HiltViewModel
@@ -67,8 +68,9 @@ class AddDrinkViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(calculatedCaffeine = drink.defaultCaffeineMg * ratio)
     }
 
-    // suspend：调用方在协程中调用，可确保数据落库后再执行后续操作（如返回上一页）。
-    // 小组件刷新在应用级作用域中触发，避免页面 pop 后 viewModelScope 被取消导致刷新中断。
+    // suspend：调用方在协程中调用，可确保数据落库 + 小组件刷新完成后再执行后续操作（如返回上一页）。
+    // 使用 refresh()（可等待）而非 refreshAsync()（fire-and-forget），
+    // 确保 onSaved()/popBackStack 发生在 widget 已更新之后，避免首次 Glance 冷启动时刷新未完成。
     suspend fun saveRecord() {
         val drink = _uiState.value.selectedDrink ?: return
         val caffeine = _uiState.value.calculatedCaffeine
@@ -77,6 +79,7 @@ class AddDrinkViewModel @Inject constructor(
         } else {
             _uiState.value.selectedSize?.volumeMl ?: drink.standardVolumeMl
         }
+        _uiState.value = _uiState.value.copy(saving = true)
         try {
             withContext(Dispatchers.IO) {
                 drinkRepository.insert(
@@ -92,8 +95,10 @@ class AddDrinkViewModel @Inject constructor(
         } catch (ce: CancellationException) {
             throw ce
         } catch (_: Exception) {
+            _uiState.value = _uiState.value.copy(saving = false)
             return
         }
-        widgetRefresher.refreshAsync()
+        widgetRefresher.refresh()
+        _uiState.value = _uiState.value.copy(saving = false)
     }
 }
