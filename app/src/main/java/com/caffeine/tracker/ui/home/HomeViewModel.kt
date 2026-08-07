@@ -100,9 +100,6 @@ class HomeViewModel @Inject constructor(
                     curveStartTime = curveStart,
                     curveEndTime = curveEnd,
                 )
-                // 当日数据变化时刷新小组件：添加/删除饮品都会让当日 Flow 重新发射，
-                // 这是最可靠的"数据已变更"信号，覆盖所有写入路径。
-                widgetRefresher.refreshAsync()
             }
         }
     }
