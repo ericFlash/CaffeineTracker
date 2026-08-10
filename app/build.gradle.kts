@@ -18,9 +18,24 @@ android {
         versionName = "1.0"
     }
 
+    // 固定签名：所有构建（debug/release）使用仓库内的同一个 keystore，
+    // 保证本地 IDE 与 GitHub Actions 产出的 APK 签名一致，可覆盖安装。
+    signingConfigs {
+        create("fixed") {
+            storeFile = file("../keystore/release.p12")
+            storePassword = "android"
+            keyAlias = "1"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("fixed")
+        }
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("fixed")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
