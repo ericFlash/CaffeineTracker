@@ -1,51 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Rounded white base plate (centered in safe zone) -->
+    <!-- 托盘（浅奶咖圆盘），位于杯中下部 -->
     <path
+        android:pathData="M31,71 C31,66 41.4,62 54,62 C66.6,62 77,66 77,71 C77,76 66.6,80 54,80 C41.4,80 31,76 31,71 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="31" android:startY="62"
+                android:endX="77" android:endY="80"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#E9D8C3"/>
+                <item android:offset="0.5" android:color="#D8BF9F"/>
+                <item android:offset="1.0" android:color="#B8926B"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- 托盘内凹阴影 -->
+    <path
+        android:pathData="M36,68 C36,65.5 43.3,63 54,63 C64.7,63 72,65.5 72,68 C72,70.5 64.7,73 54,73 C43.3,73 36,70.5 36,68 Z"
+        android:fillColor="#4A2812"
+        android:fillAlpha="0.22" />
+    <!-- 盘中咖啡杯底的投影 -->
+    <path
+        android:pathData="M42,64.5 C42,63.2 49.4,62 54,62 C58.6,62 66,63.2 66,64.5 C66,65.8 58.6,67.2 54,67.2 C49.4,67.2 42,65.8 42,64.5 Z"
+        android:fillColor="#1E0E05"
+        android:fillAlpha="0.35" />
+
+    <!-- 咖啡杯主体：圆柱受光（左亮右暗） -->
+    <path
+        android:pathData="M39,50 L69,50 L69,68 C69,74 63,78 54,78 C45,78 39,74 39,68 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="39" android:startY="64"
+                android:endX="69" android:endY="64"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#7A5233"/>
+                <item android:offset="0.35" android:color="#9C7050"/>
+                <item android:offset="0.7" android:color="#6E4729"/>
+                <item android:offset="1.0" android:color="#432A16"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 杯体左侧受光高光条 -->
+    <path
+        android:pathData="M43,50 L45.5,50 L45,77.5 C44.8,77.9 44.2,77.9 44,77.5 Z"
+        android:fillColor="#D9B896"
+        android:fillAlpha="0.45" />
+
+    <!-- 杯体右侧反光（环境光） -->
+    <path
+        android:pathData="M66.5,50 L67.5,50 L67,77.9 C66.6,78.1 66.2,78.1 65.8,77.9 Z"
         android:fillColor="#FFFFFF"
-        android:pathData="M54,78 m-26,0 a26,8 0 1,1 52,0 a26,8 0 1,1 -52,0" />
+        android:fillAlpha="0.25" />
 
-    <!-- Coffee cup body - slim, centered, inside safe area (30-78) -->
+    <!-- 杯口高光上沿 -->
     <path
-        android:fillColor="#6F4E37"
-        android:pathData="M41,46 L41,64 C41,69.4 46.5,74.5 54,74.5 C61.5,74.5 67,69.4 67,64 L67,46 Z" />
+        android:pathData="M37,48 L71,48 L71,50.6 L37,50.6 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="37" android:startY="48"
+                android:endX="71" android:endY="50.6"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#C89A6B"/>
+                <item android:offset="0.5" android:color="#EAD8C0"/>
+                <item android:offset="1.0" android:color="#A97A50"/>
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Coffee liquid -->
+    <!-- 咖啡液面（俯视椭圆，深烘焙色） -->
     <path
-        android:fillColor="#C89A6B"
-        android:pathData="M43,50 Q48,47 54,50 T65,50 L65,52 Q59,54 54,52 T43,52 Z" />
+        android:pathData="M39,50 C39,46.8 45.7,44 54,44 C62.3,44 69,46.8 69,50 C69,53.2 62.3,56 54,56 C45.7,56 39,53.2 39,50 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="43" android:startY="48"
+                android:endX="65" android:endY="53"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#3A2010"/>
+                <item android:offset="0.6" android:color="#4A2A16"/>
+                <item android:offset="1.0" android:color="#2C160A"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- 液面反光 -->
+    <path
+        android:pathData="M44,49.2 C48,47.6 54,46.6 58,47.2 C54,48.6 48,49.4 44,49.2 Z"
+        android:fillColor="#8C5A30"
+        android:fillAlpha="0.5" />
 
-    <!-- Cup rim -->
+    <!-- 杯把（双描边立体） -->
     <path
-        android:fillColor="#5A4030"
-        android:pathData="M39,46 L69,46 L69,48 L39,48 Z" />
-
-    <!-- Smooth handle -->
+        android:pathData="M69,52 C79,52 83,62 77,69 C74,72.5 69,73 66.5,72"
+        android:strokeWidth="4.5"
+        android:strokeColor="#3A2415"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
     <path
-        android:fillColor="@android:color/transparent"
-        android:strokeWidth="3.5"
-        android:strokeColor="#6F4E37"
-        android:pathData="M67,50 C74,50 76,58 72,63 C69,66 66,66"
-        android:strokeLineCap="round" />
-
-    <!-- Steam curls -->
-    <path
-        android:fillColor="@android:color/transparent"
+        android:pathData="M68.2,54 C75.6,54 79,61 74.5,66.5 C72,69.5 68.2,70 66.5,69.3"
         android:strokeWidth="2.5"
-        android:strokeColor="#6F4E37"
-        android:pathData="M49,41 C47,37 51,34 49,30 C48,28 49,27 51,27"
-        android:strokeLineCap="round" />
+        android:strokeColor="#B08A5E"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
 
+    <!-- 蒸汽 1 -->
     <path
-        android:fillColor="@android:color/transparent"
-        android:strokeWidth="2.5"
-        android:strokeColor="#6F4E37"
-        android:pathData="M59,41 C57,37 61,34 59,30 C58,28 59,27 61,27"
-        android:strokeLineCap="round" />
+        android:pathData="M47,42 C44,37 49,33 46,28 C45,26 46,25 47.5,25.5"
+        android:strokeWidth="2.6"
+        android:strokeColor="#F5E8D8"
+        android:strokeAlpha="0.55"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+    <!-- 蒸汽 2 -->
+    <path
+        android:pathData="M61,42 C58,37 63,33 60,28 C59,26 60,25 61.5,25.5"
+        android:strokeWidth="2.6"
+        android:strokeColor="#F5E8D8"
+        android:strokeAlpha="0.55"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- 中上部整体光泽弧（釉面感） -->
+    <path
+        android:pathData="M14,14 C34,6 74,6 94,14 C94,20 90,24 90,24 C68,12 40,12 18,24 C12,22 14,14 14,14 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="8"
+                android:endX="54" android:endY="28"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#30FFFFFF"/>
+                <item android:offset="1.0" android:color="#00FFFFFF"/>
+            </gradient>
+        </aapt:attr>
+    </path>
 
 </vector>
