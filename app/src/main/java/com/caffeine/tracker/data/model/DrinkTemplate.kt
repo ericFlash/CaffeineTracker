@@ -32,6 +32,38 @@ object DrinkCatalog {
             DrinkSize("大杯 (473ml)", 473),
             DrinkSize("超大杯 (591ml)", 591),
         )),
+        DrinkTemplate("手冲咖啡", "☕", 120.0, 300, listOf(
+            DrinkSize("杯 (200ml)", 200),
+            DrinkSize("大杯 (300ml)", 300),
+        )),
+        DrinkTemplate("挂耳咖啡", "☕", 70.0, 200, listOf(
+            DrinkSize("杯 (150ml)", 150),
+            DrinkSize("大杯 (200ml)", 200),
+        )),
+        DrinkTemplate("法压壶咖啡", "☕", 107.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("卡布奇诺", "☕", 150.0, 355, listOf(
+            DrinkSize("中杯 (355ml)", 355),
+            DrinkSize("大杯 (473ml)", 473),
+        )),
+        DrinkTemplate("摩卡咖啡", "☕", 150.0, 355, listOf(
+            DrinkSize("中杯 (355ml)", 355),
+            DrinkSize("大杯 (473ml)", 473),
+        )),
+        DrinkTemplate("澳白咖啡", "☕", 150.0, 355, listOf(
+            DrinkSize("中杯 (355ml)", 355),
+            DrinkSize("大杯 (473ml)", 473),
+        )),
+        DrinkTemplate("速溶黑咖啡", "☕", 63.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("三合一速溶咖啡", "☕", 35.0, 220, listOf(
+            DrinkSize("杯 (220ml)", 220),
+            DrinkSize("大杯 (300ml)", 300),
+        )),
         DrinkTemplate("浓缩咖啡", "⚡", 63.0, 30, listOf(
             DrinkSize("单份 (30ml)", 30),
             DrinkSize("双份 (60ml)", 60),
