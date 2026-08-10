@@ -1,10 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- 主背景：暖咖啡棕径向渐变，左上受光、边缘渐暗，模拟曲面受光 -->
     <path
-        android:fillColor="#6F4E37"
-        android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="54"
+                android:endX="0" android:endY="108"
+                android:type="radial"
+                android:gradientRadius="108">
+                <item android:offset="0.0" android:color="#8A5C3C"/>
+                <item android:offset="0.6" android:color="#5E3B26"/>
+                <item android:offset="1.0" android:color="#3A2415"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 顶部柔和弧光：玻璃/釉面高光 -->
+    <path
+        android:pathData="M8,16 C30,2 78,2 100,16 C100,24 92,28 92,28 C70,12 38,12 16,28 C8,26 8,16 8,16 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="6"
+                android:endX="54" android:endY="34"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#55FFFFFF"/>
+                <item android:offset="1.0" android:color="#00FFFFFF"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 左下环境反射光：柔和的暖色补光 -->
+    <path
+        android:pathData="M20,108 C8,92 6,74 12,60 C40,96 70,104 108,100 L108,108 L20,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="108"
+                android:endX="54" android:endY="58"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#33C89A6B"/>
+                <item android:offset="1.0" android:color="#00C89A6B"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
 </vector>
