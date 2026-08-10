@@ -62,6 +62,46 @@ object DrinkCatalog {
             DrinkSize("杯 (240ml)", 240),
             DrinkSize("大杯 (360ml)", 360),
         )),
+        DrinkTemplate("普洱茶 (熟)", "🍂", 40.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("普洱茶 (生)", "🍃", 55.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("茉莉花茶", "🌼", 30.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("白茶", "🍃", 28.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("铁观音", "🫖", 35.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("龙井茶", "🌱", 32.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("碧螺春", "🍃", 30.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("大红袍", "🫖", 40.0, 240, listOf(
+            DrinkSize("杯 (240ml)", 240),
+            DrinkSize("大杯 (360ml)", 360),
+        )),
+        DrinkTemplate("冷泡茶", "🧊", 40.0, 500, listOf(
+            DrinkSize("瓶 (500ml)", 500),
+            DrinkSize("大瓶 (750ml)", 750),
+        )),
+        DrinkTemplate("水果茶", "🍹", 45.0, 500, listOf(
+            DrinkSize("中杯 (350ml)", 350),
+            DrinkSize("大杯 (500ml)", 500),
+        )),
         DrinkTemplate("可乐", "🥤", 34.0, 330, listOf(
             DrinkSize("罐 (330ml)", 330),
             DrinkSize("瓶 (500ml)", 500),
