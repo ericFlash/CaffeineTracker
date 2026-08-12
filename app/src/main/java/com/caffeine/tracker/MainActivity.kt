@@ -30,12 +30,15 @@ import androidx.navigation.compose.rememberNavController
 import com.caffeine.tracker.data.repository.SettingsRepository
 import com.caffeine.tracker.ui.adddrink.AddDrinkScreen
 import com.caffeine.tracker.ui.adddrink.AddDrinkViewModel
+import com.caffeine.tracker.ui.backfill.BackfillScreen
+import com.caffeine.tracker.ui.backfill.BackfillViewModel
 import com.caffeine.tracker.ui.history.HistoryScreen
 import com.caffeine.tracker.ui.history.HistoryViewModel
 import com.caffeine.tracker.ui.home.HomeScreen
 import com.caffeine.tracker.ui.home.HomeViewModel
 import com.caffeine.tracker.ui.navigation.Screen
 import com.caffeine.tracker.ui.settings.SettingsScreen
+import com.caffeine.tracker.ui.settings.SettingsViewModel
 import com.caffeine.tracker.ui.stats.StatsScreen
 import com.caffeine.tracker.ui.stats.StatsViewModel
 import com.caffeine.tracker.ui.theme.CaffeineTrackerTheme
@@ -132,15 +135,27 @@ fun MainApp(
             }
             composable(Screen.History.route) {
                 val vm: HistoryViewModel = hiltViewModel()
-                HistoryScreen(viewModel = vm)
+                HistoryScreen(
+                    viewModel = vm,
+                    onAddBackfill = { navController.navigate(Screen.AddBackfill.route) },
+                )
+            }
+            composable(Screen.AddBackfill.route) {
+                val vm: BackfillViewModel = hiltViewModel()
+                BackfillScreen(
+                    viewModel = vm,
+                    onSaved = { navController.popBackStack() },
+                )
             }
             composable(Screen.Stats.route) {
                 val vm: StatsViewModel = hiltViewModel()
                 StatsScreen(viewModel = vm)
             }
             composable(Screen.Settings.route) {
+                val vm: SettingsViewModel = hiltViewModel()
                 SettingsScreen(
                     settingsRepository = settingsRepository,
+                    viewModel = vm,
                     onSettingsChanged = { widgetRefresher.refreshAsync() }
                 )
             }
