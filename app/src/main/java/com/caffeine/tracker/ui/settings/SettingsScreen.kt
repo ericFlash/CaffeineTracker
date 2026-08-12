@@ -39,6 +39,7 @@ private const val DEFAULT_LIMIT = 400f
 @Composable
 fun SettingsScreen(
     settingsRepository: SettingsRepository,
+    viewModel: SettingsViewModel,
     onSettingsChanged: () -> Unit = {},
 ) {
     var halfLife by remember { mutableFloatStateOf(settingsRepository.halfLifeHours.toFloat()) }
@@ -125,6 +126,17 @@ fun SettingsScreen(
                 Spacer(Modifier.height(12.dp))
                 Text("深色/浅色模式跟随系统", style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(1.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                CustomDrinksSection(viewModel = viewModel)
             }
         }
 
