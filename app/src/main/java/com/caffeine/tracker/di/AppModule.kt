@@ -2,6 +2,7 @@ package com.caffeine.tracker.di
 
 import android.content.Context
 import com.caffeine.tracker.data.local.CaffeineDatabase
+import com.caffeine.tracker.data.local.CustomDrinkDao
 import com.caffeine.tracker.data.local.DrinkDao
 import dagger.Module
 import dagger.Provides
@@ -26,6 +27,12 @@ object AppModule {
     @Singleton
     fun provideDrinkDao(@ApplicationContext context: Context): DrinkDao {
         return CaffeineDatabase.getInstance(context).drinkDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCustomDrinkDao(@ApplicationContext context: Context): CustomDrinkDao {
+        return CaffeineDatabase.getInstance(context).customDrinkDao()
     }
 
     // 应用级协程作用域：用于跨界面导航后仍需完成的任务（如小组件刷新），
