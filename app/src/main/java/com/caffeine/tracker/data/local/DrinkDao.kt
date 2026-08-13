@@ -32,6 +32,13 @@ interface DrinkDao {
     @Query("SELECT * FROM drink_records ORDER BY timestamp DESC LIMIT :limit")
     fun getRecentRecords(limit: Int): Flow<List<DrinkRecord>>
 
+    @Query("""
+        SELECT * FROM drink_records
+        WHERE id IN (SELECT MAX(id) FROM drink_records GROUP BY drinkName, emoji)
+        ORDER BY timestamp DESC LIMIT :limit
+    """)
+    fun getRecentDrinks(limit: Int): Flow<List<DrinkRecord>>
+
     @Query("SELECT SUM(caffeineMg) FROM drink_records WHERE timestamp >= :startOfDay AND timestamp < :endOfDay")
     suspend fun getTotalCaffeineForDay(startOfDay: Long, endOfDay: Long): Double?
 

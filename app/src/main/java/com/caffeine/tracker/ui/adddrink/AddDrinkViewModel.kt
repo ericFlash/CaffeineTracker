@@ -19,6 +19,7 @@ import javax.inject.Inject
 
 data class AddDrinkUiState(
     val drinks: List<DrinkTemplate> = DrinkCatalog.drinks,
+    val recentDrinks: List<DrinkTemplate> = emptyList(),
     val selectedDrink: DrinkTemplate? = null,
     val selectedSize: DrinkSize? = null,
     val customVolumeMl: String = "",
@@ -35,6 +36,34 @@ class AddDrinkViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddDrinkUiState())
     val uiState: StateFlow<AddDrinkUiState> = _uiState
+
+    init {
+        viewModelScope.launch {
+            drinkRepository.getRecentDrinks(5).collect { records ->
+                _uiState.value = _uiState.value.copy(
+                    recentDrinks = records.mapNotNull { it.toTemplate() }
+                )
+            }
+        }
+    }
+
+    // 将最近记录匹配到目录模板；未命中则用最近记录字段构造最小模板。
+    private fun DrinkRecord.toTemplate(): DrinkTemplate? {
+        val catalogMatch = DrinkCatalog.drinks.find { it.name == drinkName && it.emoji == emoji }
+        if (catalogMatch != null) return catalogMatch
+        if (volumeMl <= 0) return null
+        return DrinkTemplate(
+            name = drinkName,
+            emoji = emoji,
+            defaultCaffeineMg = caffeineMg,
+            standardVolumeMl = volumeMl,
+            sizes = listOf(DrinkSize("杯 (${volumeMl}ml)", volumeMl)),
+        )
+    }
+
+    fun selectRecent(drink: DrinkTemplate) {
+        selectDrink(drink)
+    }
 
     fun selectDrink(drink: DrinkTemplate) {
         val defaultSize = drink.sizes.first()

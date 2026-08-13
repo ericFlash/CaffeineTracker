@@ -217,7 +217,7 @@ private fun MonthHeatmap(
         val legendH = 24f * density
         val bottomPad = 4f * density
         val sidePad = 6f * density
-        val gap = 6f * density
+        val gap = 7f * density
         val availW = size.width - sidePad * 2f
         val cellW = (availW - gap * 6f) / 7f
         val availH = size.height - headerH - legendH - bottomPad

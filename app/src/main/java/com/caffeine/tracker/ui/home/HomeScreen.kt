@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -83,35 +84,84 @@ fun HomeScreen(
 
 @Composable
 private fun HeaderCard(state: HomeUiState) {
+    val container = MaterialTheme.colorScheme.primaryContainer
+    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    // 状态色与曲线/小组件语义一致：绿→黄→橙→红（按当前体内咖啡因占比）
+    val ratio = (state.currentLevel / state.dailyLimit.coerceAtLeast(1.0)).toFloat()
+    val statusColor = when {
+        ratio >= 0.75f -> Color(0xFFC2563C)
+        ratio >= 0.5f -> Color(0xFFD98E4A)
+        ratio >= 0.25f -> Color(0xFFC7A34A)
+        else -> Color(0xFF4CAF50)
+    }
+    val levelColor = when {
+        ratio >= 0.75f -> Color(0xFF9B3D28)
+        ratio >= 0.5f -> Color(0xFFB06F2E)
+        else -> contentColor
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(containerColor = container),
         shape = RoundedCornerShape(20.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text("当前体内咖啡因", style = MaterialTheme.typography.labelLarge)
-            Text(
-                text = "%.0f mg".format(state.currentLevel),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+        Box {
+            // 顶部柔和高光，增强"咖啡液面/光泽"质感
+            androidx.compose.foundation.background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.28f), Color.White.copy(alpha = 0.0f)),
+                    startY = 0f,
+                    endY = 300f,
+                ),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
             )
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                Column {
-                    Text("今日摄入", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
-                    Text("%.0f mg".format(state.totalToday), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "当前体内咖啡因",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = contentColor
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(statusColor)
+                    )
                 }
-                Column {
-                    Text("可用限额", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
-                    Text("%.0f mg".format(state.availableDailyLimit), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                }
-                Column {
-                    Text("睡眠安全", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f))
-                    Text(state.timeToSleepSafe, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "%.0f mg".format(state.currentLevel),
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = levelColor,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    StatColumn("今日摄入", "%.0f mg".format(state.totalToday), contentColor)
+                    StatColumn("可用限额", "%.0f mg".format(state.availableDailyLimit), contentColor)
+                    StatColumn("睡眠安全", state.timeToSleepSafe, contentColor, modifier = Modifier.weight(1f))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatColumn(
+    label: String,
+    value: String,
+    contentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.padding(end = 8.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.6f))
+        Spacer(Modifier.height(2.dp))
+        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = contentColor)
     }
 }
 

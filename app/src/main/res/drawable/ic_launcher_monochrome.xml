@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 单色版：用于 Android 13+ themed icon 与圆角安全区裁剪。
+     必须是纯色 fill（不能有渐变色），否则无法作为 flat mono 渲染。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 咖啡杯主体 -->
+    <path
+        android:pathData="M38,52 L70,52 L70,70 C70,76.5 62.5,80 54,80 C45.5,80 38,76.5 38,70 Z"
+        android:fillColor="#FFFFFFFF" />
+    <!-- 杯把 -->
+    <path
+        android:pathData="M70,56 C80,56 84,65 78,71 C75,74.5 70.5,75 68,74.5"
+        android:strokeWidth="5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+    <!-- 托盘 -->
+    <path
+        android:pathData="M32,80 C32,76 42,73 54,73 C66,73 76,76 76,80 C76,84 66,87 54,87 C42,87 32,84 32,80 Z"
+        android:fillColor="#FFFFFFFF" />
+    <!-- 上升代谢曲线（上升 + 拐点） -->
+    <path
+        android:pathData="M40,62 L47,55 L52,58 L59,47 L66,50 L73,42"
+        android:strokeWidth="4.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
+
+</vector>

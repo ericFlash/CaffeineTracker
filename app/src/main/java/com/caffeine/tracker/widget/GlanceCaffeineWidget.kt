@@ -52,8 +52,8 @@ import kotlinx.coroutines.flow.first
 class GlanceCaffeineWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Exact
     private data class WC(val bg: Color, val muted: Color, val brown: Color, val track: Color, val green: Color, val yellow: Color, val orange: Color, val red: Color)
-    private val light = WC(Color(0xFFFDF6F0), Color(0xFF888888), Color(0xFF795548), Color(0xFFE8E0D8), Color(0xFF8CAF8A), Color(0xFFC7A34A), Color(0xFFD98E4A), Color(0xFFC2563C))
-    private val dark = WC(Color(0xFF1C1815), Color(0xFF9A8E82), Color(0xFFC4A68D), Color(0xFF3D322B), Color(0xFFA8C8A4), Color(0xFFE6C26A), Color(0xFFEFA968), Color(0xFFE0735A))
+    private val light = WC(Color(0xFFFDF6F0), Color(0xFF8A7A6B), Color(0xFF6F4E37), Color(0xFFF0E5DC), Color(0xFF8CAF8A), Color(0xFFC7A34A), Color(0xFFD98E4A), Color(0xFFC2563C))
+    private val dark = WC(Color(0xFF1C1815), Color(0xFF9A8E82), Color(0xFFC4A68D), Color(0xFF3A332C), Color(0xFFA8C8A4), Color(0xFFE6C26A), Color(0xFFEFA968), Color(0xFFE0735A))
     private fun colorsFor(context: Context): WC {
         val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         return if (night) dark else light

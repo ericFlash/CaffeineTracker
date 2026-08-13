@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,9 +22,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,8 +38,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.caffeine.tracker.data.model.DrinkTemplate
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,7 +61,25 @@ fun AddDrinkScreen(
     ) {
         Text("添加饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
-        DrinkDropdown(
+        if (state.recentDrinks.isNotEmpty()) {
+            Text("最近常用", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(state.recentDrinks, key = { "${it.name}-${it.emoji}" }) { drink ->
+                    FilterChip(
+                        selected = state.selectedDrink?.name == drink.name,
+                        onClick = {
+                            viewModel.selectRecent(drink)
+                        },
+                        label = { Text("${drink.emoji} ${drink.name}") }
+                    )
+                }
+            }
+        }
+
+        Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        DrinkGrid(
             drinks = state.drinks,
             selectedDrink = state.selectedDrink,
             onDrinkSelected = { viewModel.selectDrink(it) }
@@ -116,54 +141,68 @@ fun AddDrinkScreen(
 }
 
 @Composable
-private fun DrinkDropdown(
-    drinks: List<com.caffeine.tracker.data.model.DrinkTemplate>,
-    selectedDrink: com.caffeine.tracker.data.model.DrinkTemplate?,
-    onDrinkSelected: (com.caffeine.tracker.data.model.DrinkTemplate) -> Unit
+private fun DrinkGrid(
+    drinks: List<DrinkTemplate>,
+    selectedDrink: DrinkTemplate?,
+    onDrinkSelected: (DrinkTemplate) -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        drinks.forEach { drink ->
+            DrinkGridItem(
+                drink = drink,
+                selected = selectedDrink?.name == drink.name,
+                onClick = { onDrinkSelected(drink) }
+            )
+        }
+    }
+}
 
-    val displayText = selectedDrink?.let { "${it.emoji} ${it.name}" } ?: "点击选择饮品"
+@Composable
+private fun DrinkGridItem(
+    drink: DrinkTemplate,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val container = if (selected) MaterialTheme.colorScheme.primaryContainer
+        else MaterialTheme.colorScheme.surface
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.outlineVariant
 
-    PickerField(
-        label = "选择饮品",
-        displayText = displayText,
-        onClick = { showDialog = true }
-    )
-
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(400.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(drinks, key = { it.name }) { drink ->
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
-                                        Column(modifier = Modifier.padding(start = 12.dp)) {
-                                            Text(drink.name, fontWeight = FontWeight.Medium)
-                                            Text("%.0f mg / %dml".format(drink.defaultCaffeineMg, drink.standardVolumeMl),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                                        }
-                                    }
-                                },
-                                onClick = {
-                                    onDrinkSelected(drink)
-                                    showDialog = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = container,
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (selected) 2.dp else 1.dp,
+            color = borderColor
+        ),
+        modifier = Modifier
+            .fillMaxWidth(0.31f)
+            .defaultMinSize(minHeight = 84.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = drink.emoji,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = drink.name,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+            )
         }
     }
 }

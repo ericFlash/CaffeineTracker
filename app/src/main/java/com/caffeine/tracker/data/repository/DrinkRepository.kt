@@ -15,6 +15,9 @@ class DrinkRepository @Inject constructor(
     fun getRecentRecords(limit: Int = 20): Flow<List<DrinkRecord>> =
         drinkDao.getRecentRecords(limit)
 
+    fun getRecentDrinks(limit: Int = 5): Flow<List<DrinkRecord>> =
+        drinkDao.getRecentDrinks(limit)
+
     fun getRecordsForDay(startOfDay: Long, endOfDay: Long): Flow<List<DrinkRecord>> =
         drinkDao.getRecordsForDay(startOfDay, endOfDay)
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- V1 曲线杯：咖啡杯 + 上升代谢曲线，体现"跟踪代谢" -->
+<!-- V2 杯+闪电：咖啡杯侧沿含闪电/能量符号，强调"咖啡因能量/代谢" -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -26,7 +26,7 @@
         android:fillColor="#4A2812"
         android:fillAlpha="0.22" />
 
-    <!-- 咖啡杯主体：圆柱受光（左亮右暗） -->
+    <!-- 咖啡杯主体 -->
     <path
         android:pathData="M40,52 L68,52 L68,72 C68,78.5 61.7,79 54,79 C46.3,79 40,78.5 40,72 Z">
         <aapt:attr name="android:fillColor">
@@ -57,7 +57,7 @@
         </aapt:attr>
     </path>
 
-    <!-- 咖啡液面（俯视椭圆） -->
+    <!-- 咖啡液面 -->
     <path
         android:pathData="M40,52 C40,48.8 46.3,46 54,46 C61.7,46 68,48.8 68,52 C68,55.2 61.7,58 54,58 C46.3,58 40,55.2 40,52 Z">
         <aapt:attr name="android:fillColor">
@@ -72,7 +72,7 @@
         </aapt:attr>
     </path>
 
-    <!-- 杯把（双描边立体） -->
+    <!-- 杯把 -->
     <path
         android:pathData="M68,54 C80,54 84,65 77,72 C74,75 68,76 65.5,75"
         android:strokeWidth="5"
@@ -86,25 +86,13 @@
         android:strokeLineCap="round"
         android:fillColor="@android:color/transparent" />
 
-    <!-- 上升代谢曲线：白色，从杯中升起，强调体内咖啡因随时间变化 -->
+    <!-- 闪电（能量符号）：金色，位于杯体上方，白色描边包边提升辨识度 -->
     <path
-        android:pathData="M42,40 C48,34 51,38 56,32 C61,27 64,31 69,24"
-        android:strokeWidth="3.4"
-        android:strokeColor="#FFF6EC"
-        android:strokeAlpha="0.95"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:fillColor="@android:color/transparent" />
-    <!-- 曲线节点 -->
+        android:pathData="M56,22 L47,40 L54,40 L50,56 L61,37 L54,37 L60,22 Z"
+        android:fillColor="#F7DFB9" />
     <path
-        android:pathData="M42,40 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0"
-        android:fillColor="#FFF6EC" />
-    <path
-        android:pathData="M56,32 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0"
-        android:fillColor="#FFF6EC" />
-    <path
-        android:pathData="M69,24 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0"
-        android:fillColor="#FFF6EC" />
+        android:pathData="M55.5,22.6 L47,39.4 L53.6,39.4 L50.4,54.2 L60.2,37.6 L53.8,37.6 L59.4,22.6 Z"
+        android:fillColor="#E8B84B" />
 
     <!-- 中上部整体光泽弧 -->
     <path
