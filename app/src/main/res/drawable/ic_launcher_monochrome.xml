@@ -1,49 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 单色版：用于 Android 13+ themed icon 与圆角安全区裁剪。
-     必须是纯色 fill（不能有渐变色），否则无法作为 flat mono 渲染。 -->
+<!-- 单色版：caffeine 文字剪影，用于 Android 13+ themed icon。
+     纯白单色描边（无渐变），字形与 ic_launcher_foreground 一致。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 透明直壁冰杯外廓 -->
     <path
-        android:pathData="M36,34 L36,68 Q36,72 40,72 L68,72 Q72,72 72,68 L72,34"
-        android:strokeWidth="2.2"
+        android:pathData="M35,45 C33,45 31,47.5 31,50 C31,53.5 33,56.5 35,56.5"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+    <path
+        android:pathData="M39,45.5 C36.8,45.5 35.5,47.5 35.5,50 C35.5,53 37,55.5 39.5,55.5 C41.8,55.5 43,53.8 43,51.2"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+    <path
+        android:pathData="M43.2,46 L43.2,57.5"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+
+    <path
+        android:pathData="M45,40.5 L45,57.5 M43.2,45.2 L47.4,45.2"
+        android:strokeWidth="3.4"
         android:strokeColor="#FFFFFFFF"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="@android:color/transparent" />
 
-    <!-- 深冰咖啡液面（代谢曲线以下实心剪影） -->
     <path
-        android:pathData="M38,70 L38,46 C43,44 47,48 52,51 C58,55 63,57 70,58 L70,70 Z"
-        android:fillColor="#FFFFFFFF" />
-
-    <!-- 代谢曲线 -->
-    <path
-        android:pathData="M38,46 C43,44 47,48 52,51 C58,55 63,57 70,58"
-        android:strokeWidth="2.6"
+        android:pathData="M51,40.5 L51,57.5 M49.2,45.2 L53.4,45.2"
+        android:strokeWidth="3.4"
         android:strokeColor="#FFFFFFFF"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="@android:color/transparent" />
+
     <path
-        android:pathData="M70,58 a1.9,1.9 0 1,0 3.8,0 a1.9,1.9 0 1,0 -3.8,0"
+        android:pathData="M59,45 C56.8,45 55.5,47.5 55.5,50 C55.5,53 57,56 59.5,56 M56.5,50.7 L59,50.7"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
+
+    <path
+        android:pathData="M63,45 L63,57.5"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+    <path
+        android:pathData="M63,42 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0"
         android:fillColor="#FFFFFFFF" />
 
-    <!-- 冰块剪影 -->
     <path
-        android:pathData="M45,40 L55,40 L55,50 L45,50 Z"
-        android:fillColor="#FFFFFFFF" />
-    <path
-        android:pathData="M60,43 L67,43 L67,50 L60,50 Z"
-        android:fillColor="#FFFFFFFF" />
+        android:pathData="M67,57.5 L67,45 C68.8,44.6 70.3,45.6 71,47.2 C71.8,49 72.3,50.2 72.3,51.5 L72.3,57.5"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
 
-    <!-- 托盘 -->
     <path
-        android:pathData="M34,74 C34,71.2 44,69 54,69 C64,69 74,71.2 74,74 C74,76.8 64,79 54,79 C44,79 34,76.8 34,74 Z"
-        android:fillColor="#FFFFFFFF" />
+        android:pathData="M77,45 C74.8,45 73.5,47.5 73.5,50 C73.5,53 75,56 77.5,56 M74.5,50.7 L77,50.7"
+        android:strokeWidth="3.4"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
 
 </vector>
