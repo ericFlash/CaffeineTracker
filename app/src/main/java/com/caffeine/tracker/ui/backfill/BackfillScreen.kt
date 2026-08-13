@@ -2,6 +2,8 @@ package com.caffeine.tracker.ui.backfill
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +25,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -99,12 +102,10 @@ fun BackfillScreen(
         )
 
         if (state.selectedDrink != null) {
-            BackfillSizeDropdown(
+            BackfillSizeChips(
                 sizes = state.selectedDrink!!.sizes.map { it.label },
-                selectedLabel = if (state.showCustomVolume) "自定义 (${
-                    state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
-                }ml)"
-                else state.selectedSize?.label ?: "",
+                selectedSizeLabel = state.selectedSize?.label ?: "",
+                showCustomVolume = state.showCustomVolume,
                 onSizeSelected = { label ->
                     val match = state.selectedDrink!!.sizes.find { it.label == label }
                     if (match != null) viewModel.selectSize(match)
@@ -270,48 +271,35 @@ private fun BackfillDrinkDropdown(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun BackfillSizeDropdown(
+private fun BackfillSizeChips(
     sizes: List<String>,
-    selectedLabel: String,
+    selectedSizeLabel: String,
+    showCustomVolume: Boolean,
     onSizeSelected: (String) -> Unit,
     onCustomSelected: () -> Unit,
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    BackfillPickerField("杯量", selectedLabel, { showDialog = true })
-
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(360.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("选择杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(sizes) { label ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    onSizeSelected(label)
-                                    showDialog = false
-                                }
-                            )
-                        }
-                        item {
-                            DropdownMenuItem(
-                                text = { Text("自定义", fontWeight = FontWeight.Medium) },
-                                onClick = {
-                                    onCustomSelected()
-                                    showDialog = false
-                                }
-                            )
-                        }
-                    }
-                }
+    Column {
+        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            sizes.forEach { label ->
+                FilterChip(
+                    selected = !showCustomVolume && selectedSizeLabel == label,
+                    onClick = { onSizeSelected(label) },
+                    label = { Text(label) }
+                )
             }
+            FilterChip(
+                selected = showCustomVolume,
+                onClick = onCustomSelected,
+                label = { Text("自定义") }
+            )
         }
     }
 }

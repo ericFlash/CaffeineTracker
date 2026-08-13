@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -19,11 +18,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -46,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.caffeine.tracker.data.model.DrinkTemplate
 import kotlinx.coroutines.launch
 
@@ -105,19 +101,16 @@ fun AddDrinkScreen(
         )
 
         if (state.selectedDrink != null) {
-            SizeDropdown(
+            SizeChips(
                 sizes = state.selectedDrink!!.sizes.map { it.label },
-                selectedLabel = if (state.showCustomVolume) "自定义 (${
-                    state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
-                }ml)"
-                else state.selectedSize?.label ?: "",
+                selectedSizeLabel = state.selectedSize?.label ?: "",
+                showCustomVolume = state.showCustomVolume,
                 onSizeSelected = { label ->
                     val match = state.selectedDrink!!.sizes.find { it.label == label }
                     if (match != null) viewModel.selectSize(match)
                 },
                 onCustomSelected = {
-                    val defaultVol = state.selectedDrink!!.standardVolumeMl
-                    viewModel.setCustomVolume(defaultVol.toString())
+                    viewModel.setCustomVolume(state.selectedDrink!!.standardVolumeMl.toString())
                 }
             )
 
@@ -228,94 +221,35 @@ private fun DrinkGridItem(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SizeDropdown(
+private fun SizeChips(
     sizes: List<String>,
-    selectedLabel: String,
+    selectedSizeLabel: String,
+    showCustomVolume: Boolean,
     onSizeSelected: (String) -> Unit,
     onCustomSelected: () -> Unit,
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    PickerField(
-        label = "杯量",
-        displayText = selectedLabel,
-        onClick = { showDialog = true }
-    )
-
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(360.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("选择杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(sizes) { label ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    onSizeSelected(label)
-                                    showDialog = false
-                                }
-                            )
-                        }
-                        item {
-                            DropdownMenuItem(
-                                text = { Text("自定义", fontWeight = FontWeight.Medium) },
-                                onClick = {
-                                    onCustomSelected()
-                                    showDialog = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PickerField(
-    label: String,
-    displayText: String,
-    onClick: () -> Unit
-) {
     Column {
-        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        androidx.compose.material3.Surface(
-            onClick = { onClick() },
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp, MaterialTheme.colorScheme.outline
-            ),
-            modifier = Modifier.fillMaxWidth()
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = displayText,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (displayText.isBlank()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                        else MaterialTheme.colorScheme.onSurface
-                )
-                Icon(
-                    Icons.Default.ArrowDropDown,
-                    contentDescription = "选择",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            sizes.forEach { label ->
+                FilterChip(
+                    selected = !showCustomVolume && selectedSizeLabel == label,
+                    onClick = { onSizeSelected(label) },
+                    label = { Text(label) }
                 )
             }
+            FilterChip(
+                selected = showCustomVolume,
+                onClick = onCustomSelected,
+                label = { Text("自定义") }
+            )
         }
     }
 }

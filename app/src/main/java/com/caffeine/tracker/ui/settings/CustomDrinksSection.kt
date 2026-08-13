@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.caffeine.tracker.data.model.CustomDrinkEmojis
 
@@ -67,10 +68,12 @@ fun CustomDrinksSection(viewModel: SettingsViewModel) {
                 Text(drink.emoji, fontSize = MaterialTheme.typography.titleMedium.fontSize,
                     modifier = Modifier.padding(end = 10.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(drink.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                    Text(drink.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("%.0f mg / %d ml".format(drink.caffeineMg, drink.standardVolumeMl),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 IconButton(onClick = { viewModel.deleteCustomDrink(drink) }) {
                     Icon(Icons.Default.Delete, contentDescription = "删除",

@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -84,10 +85,12 @@ fun HistoryScreen(
                         Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
                             modifier = Modifier.padding(end = 12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text("%.0f mg | %d ml".format(record.caffeineMg, record.volumeMl),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                         Text(
                             SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()).format(Date(record.timestamp)),

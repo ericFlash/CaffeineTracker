@@ -401,11 +401,13 @@ private fun TodayRecordsList(
             ) {
                 Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
                     modifier = Modifier.padding(end = 12.dp))
-                Column {
-                    Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("%.0f mg | %dml".format(record.caffeineMg, record.volumeMl),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
