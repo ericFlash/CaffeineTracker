@@ -11,11 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,15 @@ fun AddDrinkScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    val sizeIndex = if (state.recentDrinks.isNotEmpty()) 2 else 1
+
+    // 选中饮品后自动滚动到「② 杯量」，避免杯量藏在列表深处被直接跳过
+    LaunchedEffect(state.selectedDrink) {
+        if (state.selectedDrink != null) {
+            listState.animateScrollToItem(sizeIndex)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -76,7 +86,8 @@ fun AddDrinkScreen(
                                 if (viewModel.saveRecord()) onSaved()
                             }
                         },
-                        enabled = !state.saving,
+                        // 未显式选择杯量（caffeine 未计算）时禁用，防止误点直接记录
+                        enabled = !state.saving && state.calculatedCaffeine > 0,
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -86,81 +97,91 @@ fun AddDrinkScreen(
             }
         }
     ) { padding ->
-        Column(
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (state.recentDrinks.isNotEmpty()) {
-            Text("最近常用", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(state.recentDrinks, key = { "${it.name}-${it.emoji}" }) { drink ->
-                    FilterChip(
-                        selected = state.selectedDrink?.name == drink.name,
-                        onClick = {
-                            viewModel.selectRecent(drink)
-                        },
-                        label = { Text("${drink.emoji} ${drink.name}") }
+                item(key = "recent") {
+                    Column {
+                        Text("最近常用", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(state.recentDrinks, key = { "${it.name}-${it.emoji}" }) { drink ->
+                                FilterChip(
+                                    selected = state.selectedDrink?.name == drink.name,
+                                    onClick = { viewModel.selectRecent(drink) },
+                                    label = { Text("${drink.emoji} ${drink.name}") }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item(key = "drink") {
+                Column {
+                    Text("① 选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    DrinkGrid(
+                        drinks = state.drinks,
+                        selectedDrink = state.selectedDrink,
+                        onDrinkSelected = { viewModel.selectDrink(it) }
                     )
                 }
             }
-        }
 
-        Text("① 选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        DrinkGrid(
-            drinks = state.drinks,
-            selectedDrink = state.selectedDrink,
-            onDrinkSelected = { viewModel.selectDrink(it) }
-        )
-
-        SizeChips(
-            enabled = state.selectedDrink != null,
-            sizes = state.selectedDrink?.sizes?.map { it.label } ?: emptyList(),
-            selectedSizeLabel = state.selectedSize?.label ?: "",
-            showCustomVolume = state.showCustomVolume,
-            onSizeSelected = { label ->
-                state.selectedDrink?.let { d ->
-                    val match = d.sizes.find { it.label == label }
-                    if (match != null) viewModel.selectSize(match)
-                }
-            },
-            onCustomSelected = {
-                state.selectedDrink?.let { d ->
-                    viewModel.setCustomVolume(d.standardVolumeMl.toString())
-                }
-            }
-        )
-
-        if (state.selectedDrink != null) {
-            if (state.showCustomVolume) {
-                OutlinedTextField(
-                    value = state.customVolumeMl,
-                    onValueChange = { viewModel.setCustomVolume(it) },
-                    label = { Text("自定义毫升数") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+            item(key = "size") {
+                SizeChips(
+                    enabled = state.selectedDrink != null,
+                    sizes = state.selectedDrink?.sizes?.map { it.label } ?: emptyList(),
+                    selectedSizeLabel = state.selectedSize?.label ?: "",
+                    showCustomVolume = state.showCustomVolume,
+                    onSizeSelected = { label ->
+                        state.selectedDrink?.let { d ->
+                            val match = d.sizes.find { it.label == label }
+                            if (match != null) viewModel.selectSize(match)
+                        }
+                    },
+                    onCustomSelected = {
+                        state.selectedDrink?.let { d ->
+                            viewModel.setCustomVolume(d.standardVolumeMl.toString())
+                        }
+                    }
                 )
             }
 
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                    Text("咖啡因含量", style = MaterialTheme.typography.labelMedium)
-                    Text("%.0f mg".format(state.calculatedCaffeine),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold)
+            if (state.showCustomVolume && state.selectedDrink != null) {
+                item(key = "custom") {
+                    OutlinedTextField(
+                        value = state.customVolumeMl,
+                        onValueChange = { viewModel.setCustomVolume(it) },
+                        label = { Text("自定义毫升数") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            if (state.selectedDrink != null && state.calculatedCaffeine > 0) {
+                item(key = "caffeine") {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                            Text("咖啡因含量", style = MaterialTheme.typography.labelMedium)
+                            Text("%.0f mg".format(state.calculatedCaffeine),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }
     }
-}
 }
 
 @OptIn(ExperimentalLayoutApi::class)

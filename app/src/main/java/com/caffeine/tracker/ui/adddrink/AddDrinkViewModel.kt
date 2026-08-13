@@ -84,14 +84,14 @@ class AddDrinkViewModel @Inject constructor(
     }
 
     fun selectDrink(drink: DrinkTemplate) {
-        val defaultSize = drink.sizes.first()
+        // 不预选默认杯量：杯量作为显式步骤由用户选择，避免直接跳过导致误记
         _uiState.value = _uiState.value.copy(
             selectedDrink = drink,
-            selectedSize = defaultSize,
+            selectedSize = null,
             showCustomVolume = false,
             customVolumeMl = "",
+            calculatedCaffeine = 0.0,
         )
-        recalculate(drink, defaultSize)
     }
 
     fun selectSize(size: DrinkSize) {
