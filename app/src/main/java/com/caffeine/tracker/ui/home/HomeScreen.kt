@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -29,9 +30,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,7 +48,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
@@ -133,6 +140,30 @@ private fun HeaderCard(state: HomeUiState) {
                             .background(statusColor)
                     )
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    listOf(
+                        Color(0xFF4CAF50), Color(0xFFC7A34A),
+                        Color(0xFFD98E4A), Color(0xFFC2563C)
+                    ).forEach { c ->
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(c)
+                        )
+                        Spacer(Modifier.width(3.dp))
+                    }
+                    Spacer(Modifier.width(2.dp))
+                    Text(
+                        "低/<50%·中/50%·偏高/75%·高/≥75%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = 0.7f)
+                    )
+                }
                 Text(
                     text = "%.0f mg".format(state.currentLevel),
                     style = MaterialTheme.typography.displaySmall,
@@ -143,10 +174,10 @@ private fun HeaderCard(state: HomeUiState) {
                 Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    StatColumn("今日摄入", "%.0f mg".format(state.totalToday), contentColor)
-                    StatColumn("可用限额", "%.0f mg".format(state.availableDailyLimit), contentColor)
+                    StatColumn("今日摄入", "%.0f mg".format(state.totalToday), contentColor, modifier = Modifier.weight(1f))
+                    StatColumn("可用限额", "%.0f mg".format(state.availableDailyLimit), contentColor, modifier = Modifier.weight(1f))
                     StatColumn("睡眠安全", state.timeToSleepSafe, contentColor, modifier = Modifier.weight(1f))
                 }
             }
@@ -164,7 +195,8 @@ private fun StatColumn(
     Column(modifier = modifier.padding(end = 8.dp)) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.6f))
         Spacer(Modifier.height(2.dp))
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = contentColor)
+        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = contentColor,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -212,6 +244,9 @@ private fun CaffeineCurve(
     val textArgb = textColor.toArgb()
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
     val sdfDay = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
+    val yLabelSize = textPx(20f)
+    val timeLabelSize = textPx(16f)
+    val annotationSize = textPx(18f)
 
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
@@ -231,7 +266,7 @@ private fun CaffeineCurve(
 
         // grid lines
         val yLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 20f; alpha = 100
+            color = textArgb; textSize = yLabelSize; alpha = 100
         }
         for (i in 0..4) {
             val y = size.height * (1f - i / 4f)
@@ -243,7 +278,7 @@ private fun CaffeineCurve(
 
         // time labels on x-axis
         val timeLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 16f; alpha = 140
+            color = textArgb; textSize = timeLabelSize; alpha = 140
             textAlign = android.graphics.Paint.Align.CENTER
         }
         val rangeHours = (displayEnd - displayStart) / 3_600_000f
@@ -263,6 +298,12 @@ private fun CaffeineCurve(
         // limit dashed line
         drawLine(limitColor.copy(alpha = 0.6f), Offset(0f, limitY), Offset(size.width, limitY),
             strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
+        drawContext.canvas.nativeCanvas.drawText(
+            "每日限额 %.0fmg".format(dailyLimit), 4f, limitY - 4f,
+            android.graphics.Paint().apply {
+                color = limitColor.toArgb(); textSize = annotationSize; alpha = 160
+            }
+        )
 
         // sleep safe threshold dashed line
         drawLine(safeColor.copy(alpha = 0.6f), Offset(0f, sleepY), Offset(size.width, sleepY),
@@ -270,7 +311,7 @@ private fun CaffeineCurve(
         drawContext.canvas.nativeCanvas.drawText(
             "睡眠安全 50mg", 4f, sleepY - 4f,
             android.graphics.Paint().apply {
-                color = safeColor.toArgb(); textSize = 18f; alpha = 160
+                color = safeColor.toArgb(); textSize = annotationSize; alpha = 160
             }
         )
 
@@ -336,11 +377,15 @@ private fun CaffeineCurve(
 }
 
 @Composable
+private fun textPx(sp: Float): Float = with(LocalDensity.current) { sp.sp.toPx() }
+
+@Composable
 private fun TodayRecordsList(
     state: HomeUiState,
     onDelete: (com.caffeine.tracker.data.local.DrinkRecord) -> Unit
 ) {
     if (state.todayRecords.isEmpty()) return
+    var pendingDelete by remember { mutableStateOf<com.caffeine.tracker.data.local.DrinkRecord?>(null) }
     Text("今日记录", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
     state.todayRecords.forEach { record ->
         Card(
@@ -368,12 +413,31 @@ private fun TodayRecordsList(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
-                    IconButton(onClick = { onDelete(record) }, modifier = Modifier.size(36.dp)) {
+                    IconButton(onClick = { pendingDelete = record }, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Delete, contentDescription = "删除",
                             tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
                 }
             }
         }
+    }
+
+    pendingDelete?.let { record ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("删除该记录？") },
+            text = {
+                Text("将删除「%s %.0fmg」这条记录，删除后无法恢复。".format(record.drinkName, record.caffeineMg))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDelete(record)
+                    pendingDelete = null
+                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("取消") }
+            }
+        )
     }
 }

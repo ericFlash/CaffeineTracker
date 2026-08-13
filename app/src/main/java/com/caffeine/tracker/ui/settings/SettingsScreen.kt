@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -22,9 +23,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -45,7 +48,10 @@ fun SettingsScreen(
     var halfLife by remember { mutableFloatStateOf(settingsRepository.halfLifeHours.toFloat()) }
     var dailyLimit by remember { mutableFloatStateOf(settingsRepository.dailyLimitMg.toFloat()) }
     var weight by remember { mutableFloatStateOf(settingsRepository.bodyWeightKg) }
+    var limitCustomized by remember { mutableStateOf(settingsRepository.limitCustomized) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
+    val autoApplied = !limitCustomized
     val recommendedLimit = (weight * 5.7f).coerceIn(200f, 600f)
 
     Column(
@@ -86,10 +92,12 @@ fun SettingsScreen(
                     onValueChange = { weight = it },
                     onValueChangeFinished = {
                         settingsRepository.bodyWeightKg = weight
-                        // 体重变化后自动按 5.7mg/kg 更新每日限额（200-600 区间）
-                        val recommended = (weight * 5.7f).coerceIn(200f, 600f)
-                        dailyLimit = recommended
-                        settingsRepository.dailyLimitMg = recommended.toDouble()
+                        // 仅当用户未自定义每日限额时，才自动按 5.7mg/kg 更新限额（200-600 区间）
+                        if (!limitCustomized) {
+                            val recommended = (weight * 5.7f).coerceIn(200f, 600f)
+                            dailyLimit = recommended
+                            settingsRepository.dailyLimitMg = recommended.toDouble()
+                        }
                         onSettingsChanged()
                     }
                 )
@@ -97,7 +105,11 @@ fun SettingsScreen(
                 Spacer(Modifier.height(12.dp))
                 Text("每日安全限额: %.0f mg".format(dailyLimit),
                     style = MaterialTheme.typography.bodyMedium)
-                Text("基于体重推荐: %.0f mg (%.0f kg × 5.7mg/kg)，已自动应用".format(recommendedLimit, weight),
+                Text(
+                    if (autoApplied)
+                        "基于体重推荐: %.0f mg (%.0f kg × 5.7mg/kg)，已自动应用".format(recommendedLimit, weight)
+                    else
+                        "基于体重推荐: %.0f mg (%.0f kg × 5.7mg/kg)，已自定义限额，未自动覆盖".format(recommendedLimit, weight),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 Spacer(Modifier.height(4.dp))
@@ -105,6 +117,8 @@ fun SettingsScreen(
                     value = dailyLimit,
                     onValueChange = { dailyLimit = it },
                     onValueChangeFinished = {
+                        limitCustomized = true
+                        settingsRepository.limitCustomized = true
                         settingsRepository.dailyLimitMg = dailyLimit.toDouble()
                         onSettingsChanged()
                     },
@@ -141,15 +155,7 @@ fun SettingsScreen(
         }
 
         Button(
-            onClick = {
-                weight = DEFAULT_WEIGHT
-                halfLife = DEFAULT_HALF_LIFE
-                dailyLimit = DEFAULT_LIMIT
-                settingsRepository.bodyWeightKg = DEFAULT_WEIGHT
-                settingsRepository.halfLifeHours = DEFAULT_HALF_LIFE.toDouble()
-                settingsRepository.dailyLimitMg = DEFAULT_LIMIT.toDouble()
-                onSettingsChanged()
-            },
+            onClick = { showResetDialog = true },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -160,6 +166,33 @@ fun SettingsScreen(
             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
             Text("恢复默认设置")
         }
+    }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("恢复默认设置？") },
+            text = {
+                Text("将覆盖当前自定义参数（体重 / 半衰期 / 每日限额），恢复为默认值。此操作不可撤销。")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    weight = DEFAULT_WEIGHT
+                    halfLife = DEFAULT_HALF_LIFE
+                    dailyLimit = DEFAULT_LIMIT
+                    limitCustomized = false
+                    settingsRepository.bodyWeightKg = DEFAULT_WEIGHT
+                    settingsRepository.halfLifeHours = DEFAULT_HALF_LIFE.toDouble()
+                    settingsRepository.dailyLimitMg = DEFAULT_LIMIT.toDouble()
+                    settingsRepository.limitCustomized = false
+                    onSettingsChanged()
+                    showResetDialog = false
+                }) { Text("恢复默认") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) { Text("取消") }
+            }
+        )
     }
 }
 

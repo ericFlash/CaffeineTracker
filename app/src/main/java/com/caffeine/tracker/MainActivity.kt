@@ -130,6 +130,7 @@ fun MainApp(
                 val vm: AddDrinkViewModel = hiltViewModel()
                 AddDrinkScreen(
                     viewModel = vm,
+                    onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
                 )
             }
@@ -144,6 +145,7 @@ fun MainApp(
                 val vm: BackfillViewModel = hiltViewModel()
                 BackfillScreen(
                     viewModel = vm,
+                    onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() },
                 )
             }

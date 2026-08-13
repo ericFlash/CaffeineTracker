@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -23,11 +24,14 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -47,24 +51,37 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackfillScreen(
     viewModel: BackfillViewModel,
+    onBack: () -> Unit,
     onSaved: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text("补录饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-
-        BackfillDatePicker(
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("补录饮品", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            BackfillDatePicker(
             selectedDateMillis = state.selectedDateUtcMillis,
             onDateSelected = viewModel::setDate
         )
@@ -133,6 +150,7 @@ fun BackfillScreen(
             }
         }
     }
+}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

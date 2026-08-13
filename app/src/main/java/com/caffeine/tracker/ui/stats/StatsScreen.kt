@@ -31,8 +31,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun StatsScreen(viewModel: StatsViewModel) {
@@ -105,6 +107,9 @@ fun StatsScreen(viewModel: StatsViewModel) {
 }
 
 @Composable
+private fun textPx(sp: Float): Float = with(LocalDensity.current) { sp.sp.toPx() }
+
+@Composable
 private fun BarChart(
     data: List<DaySummary>,
     dailyLimit: Double,
@@ -115,6 +120,8 @@ private fun BarChart(
     val textColor = MaterialTheme.colorScheme.onSurface
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val textArgb = textColor.toArgb()
+    val labelSize = textPx(18f)
+    val limitLabelSize = textPx(13f)
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
@@ -128,7 +135,7 @@ private fun BarChart(
         val barWidth = slot * 0.6f
 
         val yLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 18f; alpha = 110
+            color = textArgb; textSize = labelSize; alpha = 110
             textAlign = android.graphics.Paint.Align.RIGHT
         }
         for (i in 0..4) {
@@ -144,9 +151,15 @@ private fun BarChart(
             overColor.copy(alpha = 0.6f), Offset(chartLeft, limitY), Offset(size.width, limitY),
             strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
         )
+        drawContext.canvas.nativeCanvas.drawText(
+            "限额", chartLeft + 4f, limitY - 4f,
+            android.graphics.Paint().apply {
+                color = textArgb; textSize = limitLabelSize; alpha = 160
+            }
+        )
 
         val xLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 18f; alpha = 140
+            color = textArgb; textSize = labelSize; alpha = 140
             textAlign = android.graphics.Paint.Align.CENTER
         }
         data.forEachIndexed { i, day ->
@@ -189,6 +202,7 @@ private fun MonthHeatmap(
     val outlineColor = MaterialTheme.colorScheme.primary
     val textArgb = textColor.toArgb()
     val density = LocalDensity.current.density
+    val fontScale = LocalConfiguration.current.fontScale.coerceIn(1f, 1.3f)
     val darkTheme = isSystemInDarkTheme()
 
     // 色块底色与数值渐变色随主题切换：浅色主题用暖米色系，深色主题用低亮度咖啡色系，
@@ -213,8 +227,8 @@ private fun MonthHeatmap(
         val startIdx = weekdays.indexOf(data.first().weekday).coerceIn(0, 6)
         val rows = ((startIdx + n + 6) / 7).coerceAtLeast(1)
 
-        val headerH = 20f * density
-        val legendH = 24f * density
+        val headerH = 20f * density * fontScale
+        val legendH = 24f * density * fontScale
         val bottomPad = 4f * density
         val sidePad = 6f * density
         val gap = 7f * density
@@ -223,9 +237,9 @@ private fun MonthHeatmap(
         val availH = size.height - headerH - legendH - bottomPad
         val cellH = (availH - gap * (rows - 1)) / rows.toFloat()
         val corner = 8f * density
-        val dayFont = 10f * density
-        val valueFont = 8.5f * density
-        val headerFont = 11f * density
+        val dayFont = 10f * density * fontScale
+        val valueFont = 8.5f * density * fontScale
+        val headerFont = 11f * density * fontScale
 
         // 顶部星期表头
         val headerPaint = android.graphics.Paint().apply {
@@ -300,7 +314,7 @@ private fun MonthHeatmap(
         val centerX = size.width / 2f
         val legendStart = centerX - step * 2.5f
         val labelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 10f * density; alpha = 160
+            color = textArgb; textSize = 10f * density * fontScale; alpha = 160
             textAlign = android.graphics.Paint.Align.CENTER
         }
         drawContext.canvas.nativeCanvas.drawText("少", legendStart - step * 0.8f, legendY, labelPaint)
@@ -308,6 +322,8 @@ private fun MonthHeatmap(
             drawCircle(c, radius = 5f * density, center = Offset(legendStart + k * step, legendY))
         }
         drawContext.canvas.nativeCanvas.drawText("多", legendStart + 5f * step + step * 0.8f, legendY, labelPaint)
+        drawCircle(buckets[5], radius = 5f * density, center = Offset(legendStart + 7f * step, legendY))
+        drawContext.canvas.nativeCanvas.drawText("超限", legendStart + 7f * step + step * 0.8f, legendY, labelPaint)
     }
 }
 

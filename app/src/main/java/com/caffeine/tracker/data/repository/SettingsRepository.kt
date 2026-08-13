@@ -23,6 +23,10 @@ class SettingsRepository @Inject constructor(
         get() = prefs.getFloat("body_weight", 70f)
         set(value) = prefs.edit().putFloat("body_weight", value).apply()
 
+    var limitCustomized: Boolean
+        get() = prefs.getBoolean("limit_customized", false)
+        set(value) = prefs.edit().putBoolean("limit_customized", value).apply()
+
     var isDarkTheme: Boolean
         get() = prefs.getBoolean("dark_theme", false)
         set(value) = prefs.edit().putBoolean("dark_theme", value).apply()
