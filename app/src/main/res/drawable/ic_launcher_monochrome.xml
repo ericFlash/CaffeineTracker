@@ -1,34 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 单色版：用于 Android 13+ themed icon。纯色，扁平咖啡杯 + 水汽。 -->
+<!-- 单色版：用于 Android 13+ themed icon 与圆角安全区裁剪。
+     必须是纯色 fill（不能有渐变色），否则无法作为 flat mono 渲染。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 咖啡杯身 -->
+    <!-- 透明直壁冰杯外廓 -->
     <path
-        android:pathData="M41,45 L67,45 L67,64 C67,71 60.5,75 54,75 C47.5,75 41,71 41,64 Z"
+        android:pathData="M36,34 L36,68 Q36,72 40,72 L68,72 Q72,72 72,68 L72,34"
+        android:strokeWidth="2.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- 深冰咖啡液面（代谢曲线以下实心剪影） -->
+    <path
+        android:pathData="M38,70 L38,46 C43,44 47,48 52,51 C58,55 63,57 70,58 L70,70 Z"
         android:fillColor="#FFFFFFFF" />
-    <!-- 杯把 -->
+
+    <!-- 代谢曲线 -->
     <path
-        android:pathData="M67,50 C76,50 80,59 74,64 C71,67 67.5,67 66,66"
-        android:strokeWidth="5.5"
+        android:pathData="M38,46 C43,44 47,48 52,51 C58,55 63,57 70,58"
+        android:strokeWidth="2.6"
         android:strokeColor="#FFFFFFFF"
         android:strokeLineCap="round"
-        android:fillColor="@android:color/transparent" />
-    <!-- 水汽 -->
-    <path
-        android:pathData="M48,40 C47,34 51,33 50,26"
-        android:strokeWidth="4.5"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
         android:fillColor="@android:color/transparent" />
     <path
-        android:pathData="M60,39 C59,32 63,31 62,24"
-        android:strokeWidth="4.5"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeLineCap="round"
-        android:fillColor="@android:color/transparent" />
+        android:pathData="M70,58 a1.9,1.9 0 1,0 3.8,0 a1.9,1.9 0 1,0 -3.8,0"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- 冰块剪影 -->
+    <path
+        android:pathData="M45,40 L55,40 L55,50 L45,50 Z"
+        android:fillColor="#FFFFFFFF" />
+    <path
+        android:pathData="M60,43 L67,43 L67,50 L60,50 Z"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- 托盘 -->
+    <path
+        android:pathData="M34,74 C34,71.2 44,69 54,69 C64,69 74,71.2 74,74 C74,76.8 64,79 54,79 C44,79 34,76.8 34,74 Z"
+        android:fillColor="#FFFFFFFF" />
 
 </vector>
