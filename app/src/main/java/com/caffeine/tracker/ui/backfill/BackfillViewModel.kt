@@ -56,19 +56,20 @@ class BackfillViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val custom = customDrinkRepository.getAllOnce()
-            val merged = DrinkCatalog.drinks + custom.map { drink ->
-                DrinkTemplate(
-                    name = drink.name,
-                    emoji = drink.emoji,
-                    defaultCaffeineMg = drink.caffeineMg,
-                    standardVolumeMl = drink.standardVolumeMl,
-                    sizes = listOf(
-                        DrinkSize("默认 (%dml)".format(drink.standardVolumeMl), drink.standardVolumeMl)
+            customDrinkRepository.getAll().collect { custom ->
+                val merged = DrinkCatalog.drinks + custom.map { drink ->
+                    DrinkTemplate(
+                        name = drink.name,
+                        emoji = drink.emoji,
+                        defaultCaffeineMg = drink.caffeineMg,
+                        standardVolumeMl = drink.standardVolumeMl,
+                        sizes = listOf(
+                            DrinkSize("默认 (%dml)".format(drink.standardVolumeMl), drink.standardVolumeMl)
+                        )
                     )
-                )
+                }
+                _uiState.value = _uiState.value.copy(drinks = merged)
             }
-            _uiState.value = _uiState.value.copy(drinks = merged)
         }
     }
 
