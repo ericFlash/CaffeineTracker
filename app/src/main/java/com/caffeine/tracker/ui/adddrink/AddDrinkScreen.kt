@@ -11,20 +11,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -32,8 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,14 +38,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.caffeine.tracker.data.model.DrinkTemplate
+import com.caffeine.tracker.ui.components.SizeChips
 import kotlinx.coroutines.launch
 
 @Composable
 fun AddDrinkScreen(
     viewModel: AddDrinkViewModel,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -60,7 +58,12 @@ fun AddDrinkScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("添加饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+            }
+            Text("添加饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        }
 
         if (state.recentDrinks.isNotEmpty()) {
             Text("最近常用", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -86,23 +89,27 @@ fun AddDrinkScreen(
             onDrinkSelected = { viewModel.selectDrink(it) }
         )
 
-        if (state.selectedDrink != null) {
-            SizeDropdown(
+        Text("② 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+        if (state.selectedDrink == null) {
+            Text("请先选择饮品后设置杯量", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+        } else {
+            SizeChips(
                 sizes = state.selectedDrink!!.sizes.map { it.label },
-                selectedLabel = if (state.showCustomVolume) "自定义 (${
-                    state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
-                }ml)"
-                else state.selectedSize?.label ?: "",
+                selectedLabel = state.selectedSize?.label ?: "",
+                showCustom = state.showCustomVolume,
                 onSizeSelected = { label ->
                     val match = state.selectedDrink!!.sizes.find { it.label == label }
                     if (match != null) viewModel.selectSize(match)
                 },
                 onCustomSelected = {
-                    val defaultVol = state.selectedDrink!!.standardVolumeMl
-                    viewModel.setCustomVolume(defaultVol.toString())
+                    viewModel.setCustomVolume(state.selectedDrink!!.standardVolumeMl.toString())
                 }
             )
+        }
 
+        if (state.selectedDrink != null) {
             if (state.showCustomVolume) {
                 OutlinedTextField(
                     value = state.customVolumeMl,
@@ -205,98 +212,6 @@ private fun DrinkGridItem(
                 textAlign = TextAlign.Center,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
             )
-        }
-    }
-}
-
-@Composable
-private fun SizeDropdown(
-    sizes: List<String>,
-    selectedLabel: String,
-    onSizeSelected: (String) -> Unit,
-    onCustomSelected: () -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    PickerField(
-        label = "杯量",
-        displayText = selectedLabel,
-        onClick = { showDialog = true }
-    )
-
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(360.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("选择杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(sizes) { label ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    onSizeSelected(label)
-                                    showDialog = false
-                                }
-                            )
-                        }
-                        item {
-                            DropdownMenuItem(
-                                text = { Text("自定义", fontWeight = FontWeight.Medium) },
-                                onClick = {
-                                    onCustomSelected()
-                                    showDialog = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PickerField(
-    label: String,
-    displayText: String,
-    onClick: () -> Unit
-) {
-    Column {
-        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        androidx.compose.material3.Surface(
-            onClick = { onClick() },
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp, MaterialTheme.colorScheme.outline
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = displayText,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (displayText.isBlank()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                        else MaterialTheme.colorScheme.onSurface
-                )
-                Icon(
-                    Icons.Default.ArrowDropDown,
-                    contentDescription = "选择",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-            }
         }
     }
 }

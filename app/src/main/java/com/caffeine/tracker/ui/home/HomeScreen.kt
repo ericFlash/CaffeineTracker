@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -29,9 +30,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +62,9 @@ fun HomeScreen(
     viewModel: HomeViewModel,
 ) {
     val state by viewModel.uiState.collectAsState()
+    var pendingDelete by remember {
+        mutableStateOf<com.caffeine.tracker.data.local.DrinkRecord?>(null)
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -77,7 +85,24 @@ fun HomeScreen(
         ) {
             item { HeaderCard(state) }
             item { CurveCard(state) }
-            item { TodayRecordsList(state, viewModel::deleteRecord) }
+            item { TodayRecordsList(state, onDelete = { pendingDelete = it }) }
+        }
+
+        pendingDelete?.let { record ->
+            AlertDialog(
+                onDismissRequest = { pendingDelete = null },
+                title = { Text("删除记录？") },
+                text = { Text("确定删除「${record.drinkName}」吗？此操作不可撤销。") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.deleteRecord(record)
+                        pendingDelete = null
+                    }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingDelete = null }) { Text("取消") }
+                }
+            )
         }
     }
 }
@@ -147,8 +172,9 @@ private fun HeaderCard(state: HomeUiState) {
                 ) {
                     StatColumn("今日摄入", "%.0f mg".format(state.totalToday), contentColor)
                     StatColumn("可用限额", "%.0f mg".format(state.availableDailyLimit), contentColor)
-                    StatColumn("睡眠安全", state.timeToSleepSafe, contentColor, modifier = Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(6.dp))
+                StatColumn("睡眠安全", state.timeToSleepSafe, contentColor, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -164,7 +190,14 @@ private fun StatColumn(
     Column(modifier = modifier.padding(end = 8.dp)) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.6f))
         Spacer(Modifier.height(2.dp))
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = contentColor)
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = contentColor,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -356,8 +389,9 @@ private fun TodayRecordsList(
             ) {
                 Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
                     modifier = Modifier.padding(end = 12.dp))
-                Column {
-                    Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     Text("%.0f mg | %dml".format(record.caffeineMg, record.volumeMl),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))

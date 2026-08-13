@@ -14,15 +14,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +42,9 @@ fun HistoryScreen(
     onAddBackfill: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
+    var pendingDelete by remember {
+        mutableStateOf<com.caffeine.tracker.data.local.DrinkRecord?>(null)
+    }
 
     if (state.records.isEmpty()) {
         Column(
@@ -78,7 +86,8 @@ fun HistoryScreen(
                         Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
                             modifier = Modifier.padding(end = 12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             Text("%.0f mg | %d ml".format(record.caffeineMg, record.volumeMl),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -88,7 +97,7 @@ fun HistoryScreen(
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                         )
-                        IconButton(onClick = { viewModel.deleteRecord(record) }, modifier = Modifier.size(36.dp)) {
+                        IconButton(onClick = { pendingDelete = record }, modifier = Modifier.size(36.dp)) {
                             Icon(Icons.Default.Delete, contentDescription = "删除",
                                 tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                         }
@@ -96,5 +105,22 @@ fun HistoryScreen(
                 }
             }
         }
+    }
+
+    pendingDelete?.let { record ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("删除记录？") },
+            text = { Text("确定删除「${record.drinkName}」吗？此操作不可撤销。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteRecord(record)
+                    pendingDelete = null
+                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("取消") }
+            }
+        )
     }
 }

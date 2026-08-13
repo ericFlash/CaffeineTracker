@@ -130,7 +130,8 @@ fun MainApp(
                 val vm: AddDrinkViewModel = hiltViewModel()
                 AddDrinkScreen(
                     viewModel = vm,
-                    onSaved = { navController.popBackStack() }
+                    onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(Screen.History.route) {
@@ -145,6 +146,7 @@ fun MainApp(
                 BackfillScreen(
                     viewModel = vm,
                     onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(Screen.Stats.route) {

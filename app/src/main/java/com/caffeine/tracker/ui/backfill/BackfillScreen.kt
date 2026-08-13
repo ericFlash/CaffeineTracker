@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -22,7 +23,9 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -43,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.caffeine.tracker.data.model.DrinkTemplate
+import com.caffeine.tracker.ui.components.SizeChips
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
@@ -51,6 +55,7 @@ import java.util.TimeZone
 fun BackfillScreen(
     viewModel: BackfillViewModel,
     onSaved: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -62,7 +67,12 @@ fun BackfillScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("补录饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+            }
+            Text("补录饮品", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        }
 
         BackfillDatePicker(
             selectedDateMillis = state.selectedDateUtcMillis,
@@ -81,13 +91,16 @@ fun BackfillScreen(
             onDrinkSelected = viewModel::selectDrink
         )
 
-        if (state.selectedDrink != null) {
-            BackfillSizeDropdown(
+        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+        if (state.selectedDrink == null) {
+            Text("请先选择饮品后设置杯量", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+        } else {
+            SizeChips(
                 sizes = state.selectedDrink!!.sizes.map { it.label },
-                selectedLabel = if (state.showCustomVolume) "自定义 (${
-                    state.customVolumeMl.takeIf { it.isNotEmpty() } ?: "0"
-                }ml)"
-                else state.selectedSize?.label ?: "",
+                selectedLabel = state.selectedSize?.label ?: "",
+                showCustom = state.showCustomVolume,
                 onSizeSelected = { label ->
                     val match = state.selectedDrink!!.sizes.find { it.label == label }
                     if (match != null) viewModel.selectSize(match)
@@ -96,7 +109,9 @@ fun BackfillScreen(
                     viewModel.setCustomVolume(state.selectedDrink!!.standardVolumeMl.toString())
                 }
             )
+        }
 
+        if (state.selectedDrink != null) {
             if (state.showCustomVolume) {
                 OutlinedTextField(
                     value = state.customVolumeMl,
@@ -241,52 +256,6 @@ private fun BackfillDrinkDropdown(
                                 },
                                 onClick = {
                                     onDrinkSelected(drink)
-                                    showDialog = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BackfillSizeDropdown(
-    sizes: List<String>,
-    selectedLabel: String,
-    onSizeSelected: (String) -> Unit,
-    onCustomSelected: () -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    BackfillPickerField("杯量", selectedLabel, { showDialog = true })
-
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(360.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("选择杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(sizes) { label ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    onSizeSelected(label)
-                                    showDialog = false
-                                }
-                            )
-                        }
-                        item {
-                            DropdownMenuItem(
-                                text = { Text("自定义", fontWeight = FontWeight.Medium) },
-                                onClick = {
-                                    onCustomSelected()
                                     showDialog = false
                                 }
                             )

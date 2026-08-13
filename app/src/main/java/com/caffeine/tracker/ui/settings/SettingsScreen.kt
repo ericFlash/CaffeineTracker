@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -22,9 +23,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -45,6 +48,7 @@ fun SettingsScreen(
     var halfLife by remember { mutableFloatStateOf(settingsRepository.halfLifeHours.toFloat()) }
     var dailyLimit by remember { mutableFloatStateOf(settingsRepository.dailyLimitMg.toFloat()) }
     var weight by remember { mutableFloatStateOf(settingsRepository.bodyWeightKg) }
+    var showResetConfirm by remember { mutableStateOf(false) }
 
     val recommendedLimit = (weight * 5.7f).coerceIn(200f, 600f)
 
@@ -141,15 +145,7 @@ fun SettingsScreen(
         }
 
         Button(
-            onClick = {
-                weight = DEFAULT_WEIGHT
-                halfLife = DEFAULT_HALF_LIFE
-                dailyLimit = DEFAULT_LIMIT
-                settingsRepository.bodyWeightKg = DEFAULT_WEIGHT
-                settingsRepository.halfLifeHours = DEFAULT_HALF_LIFE.toDouble()
-                settingsRepository.dailyLimitMg = DEFAULT_LIMIT.toDouble()
-                onSettingsChanged()
-            },
+            onClick = { showResetConfirm = true },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -160,6 +156,29 @@ fun SettingsScreen(
             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
             Text("恢复默认设置")
         }
+    }
+
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text("恢复默认设置？") },
+            text = { Text("将体重、半衰期与每日限额重置为默认值，且会覆盖当前自定义参数。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    weight = DEFAULT_WEIGHT
+                    halfLife = DEFAULT_HALF_LIFE
+                    dailyLimit = DEFAULT_LIMIT
+                    settingsRepository.bodyWeightKg = DEFAULT_WEIGHT
+                    settingsRepository.halfLifeHours = DEFAULT_HALF_LIFE.toDouble()
+                    settingsRepository.dailyLimitMg = DEFAULT_LIMIT.toDouble()
+                    onSettingsChanged()
+                    showResetConfirm = false
+                }) { Text("恢复默认") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) { Text("取消") }
+            }
+        )
     }
 }
 
