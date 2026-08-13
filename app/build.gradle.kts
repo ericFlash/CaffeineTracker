@@ -76,13 +76,12 @@ android {
     }
 }
 
-// 输出正式命名的 APK：CaffeineTracker-<版本号>-<variant>.apk
+// 输出 APK：保持默认名称 app-debug.apk（避免依赖 workflow 路径），
+// 版本号管理通过 versionCode/versionName（git 驱动）实现。
 androidComponents {
     onVariants { variant ->
         variant.outputs.configureEach { output ->
-            output.outputFileName.set(
-                "CaffeineTracker-${gitShortSha}-${variant.name}.apk"
-            )
+            output.outputFileName.set("${project.name}-${variant.name}.apk")
         }
     }
 }
