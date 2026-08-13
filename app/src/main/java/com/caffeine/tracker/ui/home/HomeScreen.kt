@@ -105,16 +105,19 @@ private fun HeaderCard(state: HomeUiState) {
         colors = CardDefaults.cardColors(containerColor = container),
         shape = RoundedCornerShape(20.dp)
     ) {
-        Box {
-            // 顶部柔和高光，增强"咖啡液面/光泽"质感
-            androidx.compose.foundation.background(
-                Brush.verticalGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.28f), Color.White.copy(alpha = 0.0f)),
-                    startY = 0f,
-                    endY = 300f,
-                ),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                // 顶部柔和高光，增强"咖啡液面/光泽"质感
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.28f), Color.White.copy(alpha = 0.0f)),
+                        startY = 0f,
+                        endY = 400f,
+                    ),
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                )
+        ) {
             Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
