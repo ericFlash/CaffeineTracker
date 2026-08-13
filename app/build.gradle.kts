@@ -76,16 +76,6 @@ android {
     }
 }
 
-// 输出 APK：保持默认名称 app-debug.apk（避免依赖 workflow 路径），
-// 版本号管理通过 versionCode/versionName（git 驱动）实现。
-androidComponents {
-    onVariants { variant ->
-        variant.outputs.configureEach { output ->
-            output.outputFileName.set("${project.name}-${variant.name}.apk")
-        }
-    }
-}
-
 dependencies {
     // Compose BOM
     val composeBom = platform("androidx.compose:compose-bom:2024.11.00")
