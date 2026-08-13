@@ -6,6 +6,25 @@ plugins {
     id("com.google.dagger.hilt.android")
 }
 
+// 版本号管理：每次提交/构建对应唯一版本
+// versionCode = git 提交总数（单调递增，满足 Android 覆盖安装要求）
+// versionName = 主.次.提交数+提交短哈希
+fun runGit(vararg args: String): String = try {
+    val p = ProcessBuilder("git", *args)
+        .redirectErrorStream(false)
+        .start()
+    val raw = p.inputStream.readBytes().toString(Charsets.UTF_8)
+    p.waitFor()
+    raw.trim()
+} catch (e: Exception) {
+    ""
+}
+
+val gitCommitCount: String = runGit("rev-list", "--count", "HEAD").ifBlank { "0" }
+val gitShortSha: String = runGit("rev-parse", "--short=7", "HEAD").ifBlank { "dev" }
+val versionMajor = 1
+val versionMinor = 0
+
 android {
     namespace = "com.caffeine.tracker"
     compileSdk = 35
@@ -14,8 +33,8 @@ android {
         applicationId = "com.caffeine.tracker"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = gitCommitCount.toIntOrNull() ?: 1
+        versionName = "$versionMajor.$versionMinor.${gitCommitCount.takeIf { it.isNotBlank() } ?: "0"}+$gitShortSha"
     }
 
     // 固定签名：所有构建（debug/release）使用仓库内的同一个 keystore，
@@ -54,6 +73,17 @@ android {
 
     buildFeatures {
         compose = true
+    }
+}
+
+// 输出正式命名的 APK：CaffeineTracker-<版本号>-<variant>.apk
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.configureEach { output ->
+            output.outputFileName.set(
+                "CaffeineTracker-${gitShortSha}-${variant.name}.apk"
+            )
+        }
     }
 }
 
