@@ -6,6 +6,7 @@ import com.caffeine.tracker.data.local.DrinkRecord
 import com.caffeine.tracker.data.model.DrinkCatalog
 import com.caffeine.tracker.data.model.DrinkSize
 import com.caffeine.tracker.data.model.DrinkTemplate
+import com.caffeine.tracker.data.repository.CustomDrinkRepository
 import com.caffeine.tracker.data.repository.DrinkRepository
 import com.caffeine.tracker.widget.WidgetRefresher
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +32,7 @@ data class AddDrinkUiState(
 @HiltViewModel
 class AddDrinkViewModel @Inject constructor(
     private val drinkRepository: DrinkRepository,
+    private val customDrinkRepository: CustomDrinkRepository,
     private val widgetRefresher: WidgetRefresher,
 ) : ViewModel() {
 
@@ -43,6 +45,22 @@ class AddDrinkViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     recentDrinks = records.mapNotNull { it.toTemplate() }
                 )
+            }
+        }
+        viewModelScope.launch {
+            customDrinkRepository.getAll().collect { custom ->
+                val merged = DrinkCatalog.drinks + custom.map { drink ->
+                    DrinkTemplate(
+                        name = drink.name,
+                        emoji = drink.emoji,
+                        defaultCaffeineMg = drink.caffeineMg,
+                        standardVolumeMl = drink.standardVolumeMl,
+                        sizes = listOf(
+                            DrinkSize("默认 (%dml)".format(drink.standardVolumeMl), drink.standardVolumeMl)
+                        )
+                    )
+                }
+                _uiState.value = _uiState.value.copy(drinks = merged)
             }
         }
     }

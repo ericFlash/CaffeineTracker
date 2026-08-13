@@ -111,27 +111,32 @@ fun AddDrinkScreen(
             }
         }
 
-        Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("① 选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         DrinkGrid(
             drinks = state.drinks,
             selectedDrink = state.selectedDrink,
             onDrinkSelected = { viewModel.selectDrink(it) }
         )
 
-        if (state.selectedDrink != null) {
-            SizeChips(
-                sizes = state.selectedDrink!!.sizes.map { it.label },
-                selectedSizeLabel = state.selectedSize?.label ?: "",
-                showCustomVolume = state.showCustomVolume,
-                onSizeSelected = { label ->
-                    val match = state.selectedDrink!!.sizes.find { it.label == label }
+        SizeChips(
+            enabled = state.selectedDrink != null,
+            sizes = state.selectedDrink?.sizes?.map { it.label } ?: emptyList(),
+            selectedSizeLabel = state.selectedSize?.label ?: "",
+            showCustomVolume = state.showCustomVolume,
+            onSizeSelected = { label ->
+                state.selectedDrink?.let { d ->
+                    val match = d.sizes.find { it.label == label }
                     if (match != null) viewModel.selectSize(match)
-                },
-                onCustomSelected = {
-                    viewModel.setCustomVolume(state.selectedDrink!!.standardVolumeMl.toString())
                 }
-            )
+            },
+            onCustomSelected = {
+                state.selectedDrink?.let { d ->
+                    viewModel.setCustomVolume(d.standardVolumeMl.toString())
+                }
+            }
+        )
 
+        if (state.selectedDrink != null) {
             if (state.showCustomVolume) {
                 OutlinedTextField(
                     value = state.customVolumeMl,
@@ -229,6 +234,7 @@ private fun DrinkGridItem(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SizeChips(
+    enabled: Boolean,
     sizes: List<String>,
     selectedSizeLabel: String,
     showCustomVolume: Boolean,
@@ -236,25 +242,31 @@ private fun SizeChips(
     onCustomSelected: () -> Unit,
 ) {
     Column {
-        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("② 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            sizes.forEach { label ->
+        if (!enabled) {
+            Text("请先选择饮品，再选择杯量",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+        } else {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                sizes.forEach { label ->
+                    FilterChip(
+                        selected = !showCustomVolume && selectedSizeLabel == label,
+                        onClick = { onSizeSelected(label) },
+                        label = { Text(label) }
+                    )
+                }
                 FilterChip(
-                    selected = !showCustomVolume && selectedSizeLabel == label,
-                    onClick = { onSizeSelected(label) },
-                    label = { Text(label) }
+                    selected = showCustomVolume,
+                    onClick = onCustomSelected,
+                    label = { Text("自定义") }
                 )
             }
-            FilterChip(
-                selected = showCustomVolume,
-                onClick = onCustomSelected,
-                label = { Text("自定义") }
-            )
         }
     }
 }

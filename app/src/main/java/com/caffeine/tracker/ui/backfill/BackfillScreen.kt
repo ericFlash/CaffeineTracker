@@ -101,20 +101,25 @@ fun BackfillScreen(
             onDrinkSelected = viewModel::selectDrink
         )
 
-        if (state.selectedDrink != null) {
-            BackfillSizeChips(
-                sizes = state.selectedDrink!!.sizes.map { it.label },
-                selectedSizeLabel = state.selectedSize?.label ?: "",
-                showCustomVolume = state.showCustomVolume,
-                onSizeSelected = { label ->
-                    val match = state.selectedDrink!!.sizes.find { it.label == label }
+        BackfillSizeChips(
+            enabled = state.selectedDrink != null,
+            sizes = state.selectedDrink?.sizes?.map { it.label } ?: emptyList(),
+            selectedSizeLabel = state.selectedSize?.label ?: "",
+            showCustomVolume = state.showCustomVolume,
+            onSizeSelected = { label ->
+                state.selectedDrink?.let { d ->
+                    val match = d.sizes.find { it.label == label }
                     if (match != null) viewModel.selectSize(match)
-                },
-                onCustomSelected = {
-                    viewModel.setCustomVolume(state.selectedDrink!!.standardVolumeMl.toString())
                 }
-            )
+            },
+            onCustomSelected = {
+                state.selectedDrink?.let { d ->
+                    viewModel.setCustomVolume(d.standardVolumeMl.toString())
+                }
+            }
+        )
 
+        if (state.selectedDrink != null) {
             if (state.showCustomVolume) {
                 OutlinedTextField(
                     value = state.customVolumeMl,
@@ -164,7 +169,7 @@ private fun BackfillDatePicker(
     val df = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
     val display = df.format(java.util.Date(selectedDateMillis))
 
-    BackfillPickerField("日期", display, { showDialog = true })
+    BackfillPickerField("① 日期", display, { showDialog = true })
 
     if (showDialog) {
         val today = BackfillUiState.Companion.todayUtcMillis()
@@ -201,7 +206,7 @@ private fun BackfillTimePicker(
     var showDialog by remember { mutableStateOf(false) }
     val display = "%02d:%02d".format(hour, minute)
 
-    BackfillPickerField("时间", display, { showDialog = true })
+    BackfillPickerField("② 时间", display, { showDialog = true })
 
     if (showDialog) {
         val timeState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
@@ -232,7 +237,7 @@ private fun BackfillDrinkDropdown(
     var showDialog by remember { mutableStateOf(false) }
     val displayText = selectedDrink?.let { "${it.emoji} ${it.name}" } ?: "点击选择饮品"
 
-    BackfillPickerField("选择饮品", displayText, { showDialog = true })
+    BackfillPickerField("③ 选择饮品", displayText, { showDialog = true })
 
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
@@ -274,6 +279,7 @@ private fun BackfillDrinkDropdown(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BackfillSizeChips(
+    enabled: Boolean,
     sizes: List<String>,
     selectedSizeLabel: String,
     showCustomVolume: Boolean,
@@ -281,25 +287,31 @@ private fun BackfillSizeChips(
     onCustomSelected: () -> Unit,
 ) {
     Column {
-        Text("杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("④ 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            sizes.forEach { label ->
+        if (!enabled) {
+            Text("请先选择饮品，再选择杯量",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+        } else {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                sizes.forEach { label ->
+                    FilterChip(
+                        selected = !showCustomVolume && selectedSizeLabel == label,
+                        onClick = { onSizeSelected(label) },
+                        label = { Text(label) }
+                    )
+                }
                 FilterChip(
-                    selected = !showCustomVolume && selectedSizeLabel == label,
-                    onClick = { onSizeSelected(label) },
-                    label = { Text(label) }
+                    selected = showCustomVolume,
+                    onClick = onCustomSelected,
+                    label = { Text("自定义") }
                 )
             }
-            FilterChip(
-                selected = showCustomVolume,
-                onClick = onCustomSelected,
-                label = { Text("自定义") }
-            )
         }
     }
 }
