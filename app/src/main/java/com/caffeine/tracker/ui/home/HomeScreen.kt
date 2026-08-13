@@ -48,11 +48,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -244,9 +243,10 @@ private fun CaffeineCurve(
     val textArgb = textColor.toArgb()
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
     val sdfDay = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
-    val yLabelSize = textPx(20f)
-    val timeLabelSize = textPx(16f)
-    val annotationSize = textPx(18f)
+    val fontScale = LocalConfiguration.current.fontScale
+    val yLabelSize = 20f * fontScale
+    val timeLabelSize = 16f * fontScale
+    val annotationSize = 18f * fontScale
 
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
@@ -375,9 +375,6 @@ private fun CaffeineCurve(
         }
     }
 }
-
-@Composable
-private fun textPx(sp: Float): Float = with(LocalDensity.current) { sp.sp.toPx() }
 
 @Composable
 private fun TodayRecordsList(

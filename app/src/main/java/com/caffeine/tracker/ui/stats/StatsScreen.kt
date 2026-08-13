@@ -34,7 +34,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun StatsScreen(viewModel: StatsViewModel) {
@@ -107,9 +106,6 @@ fun StatsScreen(viewModel: StatsViewModel) {
 }
 
 @Composable
-private fun textPx(sp: Float): Float = with(LocalDensity.current) { sp.sp.toPx() }
-
-@Composable
 private fun BarChart(
     data: List<DaySummary>,
     dailyLimit: Double,
@@ -120,8 +116,9 @@ private fun BarChart(
     val textColor = MaterialTheme.colorScheme.onSurface
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val textArgb = textColor.toArgb()
-    val labelSize = textPx(18f)
-    val limitLabelSize = textPx(13f)
+    val fontScale = LocalConfiguration.current.fontScale
+    val labelSize = 18f * fontScale
+    val limitLabelSize = 13f * fontScale
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas

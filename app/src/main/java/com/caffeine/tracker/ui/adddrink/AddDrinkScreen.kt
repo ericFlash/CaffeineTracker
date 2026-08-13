@@ -66,6 +66,24 @@ fun AddDrinkScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            if (state.selectedDrink != null) {
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                if (viewModel.saveRecord()) onSaved()
+                            }
+                        },
+                        enabled = !state.saving,
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(if (state.saving) "保存中…" else "记录", modifier = Modifier.padding(8.dp))
+                    }
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -134,19 +152,6 @@ fun AddDrinkScreen(
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold)
                 }
-            }
-
-            Button(
-                onClick = {
-                    scope.launch {
-                        if (viewModel.saveRecord()) onSaved()
-                    }
-                },
-                enabled = !state.saving,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(if (state.saving) "保存中…" else "记录摄入", modifier = Modifier.padding(8.dp))
             }
         }
     }
