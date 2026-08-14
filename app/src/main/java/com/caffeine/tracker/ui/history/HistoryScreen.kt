@@ -33,7 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.caffeine.tracker.ui.theme.AppAlpha
+import com.caffeine.tracker.ui.theme.AppDimens
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -67,39 +70,59 @@ fun HistoryScreen(
             Text("历史记录", style = androidx.compose.material3.MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             androidx.compose.material3.Button(onClick = onAddBackfill) { Text("＋补录") }
         }
+        val now = System.currentTimeMillis()
+        val todayStart = Calendar.getInstance().apply {
+            timeInMillis = now
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val yesterdayStart = todayStart - 86_400_000L
+        val groups = listOf(
+            Triple("今天", todayStart, Long.MAX_VALUE),
+            Triple("昨天", yesterdayStart, todayStart),
+            Triple("更早", Long.MIN_VALUE, yesterdayStart),
+        ).mapNotNull { (name, lo, hi) ->
+            val sub = state.records.filter { it.timestamp >= lo && it.timestamp < hi }
+            if (sub.isEmpty()) null else name to sub
+        }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(state.records) { record ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(0.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            groups.forEach { (name, list) ->
+                item(key = "header-$name") {
+                    Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                }
+                items(list, key = { it.id }) { record ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                            modifier = Modifier.padding(end = 12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("%.0f mg | %d ml".format(record.caffeineMg, record.volumeMl),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                        Text(
-                            SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()).format(Date(record.timestamp)),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                        )
-                        IconButton(onClick = { pendingDelete = record }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = "删除",
-                                tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(record.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                modifier = Modifier.padding(end = 12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(record.drinkName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("%.0f mg | %d ml".format(record.caffeineMg, record.volumeMl),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = AppAlpha.Secondary),
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            Text(
+                                SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()).format(Date(record.timestamp)),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = AppAlpha.Secondary)
+                            )
+                            IconButton(onClick = { pendingDelete = record }, modifier = Modifier.size(AppDimens.MinTouchTarget)) {
+                                Icon(Icons.Default.Delete, contentDescription = "删除",
+                                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(AppDimens.IconTouchInner))
+                            }
                         }
                     }
                 }

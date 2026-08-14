@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.caffeine.tracker.data.model.CustomDrinkEmojis
+import com.caffeine.tracker.ui.theme.AppDimens
 
 @Composable
 fun CustomDrinksSection(viewModel: SettingsViewModel) {
@@ -144,7 +145,7 @@ private fun EmojiPicker(selected: String, onSelect: (String) -> Unit) {
             val isSelected = emoji == selected
             Column(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(AppDimens.MinTouchTarget)
                     .background(
                         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
                             else MaterialTheme.colorScheme.surfaceVariant,

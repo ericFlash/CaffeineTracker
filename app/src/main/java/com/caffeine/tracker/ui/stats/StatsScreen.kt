@@ -1,5 +1,6 @@
 package com.caffeine.tracker.ui.stats
 
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -26,14 +27,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.caffeine.tracker.domain.CaffeineLevels
+import com.caffeine.tracker.ui.theme.ChartText
 
 @Composable
 fun StatsScreen(viewModel: StatsViewModel) {
@@ -70,7 +73,8 @@ fun StatsScreen(viewModel: StatsViewModel) {
                     Text("最爱饮品", style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f))
                     Text(if (state.favoriteDrink.isEmpty()) "--" else state.favoriteDrink,
-                        style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -81,7 +85,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
             elevation = CardDefaults.cardElevation(1.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("近7天趋势", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                Text("近7天趋势", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 BarChart(state.weekData, state.dailyLimit, modifier = Modifier.fillMaxWidth().height(160.dp))
             }
@@ -95,7 +99,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     "近30天趋势 · 累计 %.0f mg".format(state.monthData.sumOf { it.totalMg }),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.height(8.dp))
@@ -116,9 +120,8 @@ private fun BarChart(
     val textColor = MaterialTheme.colorScheme.onSurface
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val textArgb = textColor.toArgb()
-    val fontScale = LocalConfiguration.current.fontScale
-    val labelSize = 18f * fontScale
-    val limitLabelSize = 13f * fontScale
+    val density = LocalDensity.current.density
+    val fs = ChartText.clampFontScale(LocalConfiguration.current.fontScale)
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
@@ -131,10 +134,10 @@ private fun BarChart(
         val slot = totalBarArea / data.size
         val barWidth = slot * 0.6f
 
-        val yLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = labelSize; alpha = 110
-            textAlign = android.graphics.Paint.Align.RIGHT
-        }
+        val yLabelPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.RIGHT, alpha = 110
+        )
         for (i in 0..4) {
             val yVal = maxVal * (4 - i) / 4
             val y = chartTop + chartHeight * i / 4f
@@ -150,15 +153,14 @@ private fun BarChart(
         )
         drawContext.canvas.nativeCanvas.drawText(
             "限额", chartLeft + 4f, limitY - 4f,
-            android.graphics.Paint().apply {
-                color = textArgb; textSize = limitLabelSize; alpha = 160
-            }
+            ChartText.paint(ChartText.ANNOTATION_SP, textArgb, density, fs,
+                Paint.Align.LEFT, alpha = 160)
         )
 
-        val xLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = labelSize; alpha = 140
-            textAlign = android.graphics.Paint.Align.CENTER
-        }
+        val xLabelPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.CENTER, alpha = 140
+        )
         data.forEachIndexed { i, day ->
             val ratio = (day.totalMg / maxVal).toFloat().coerceIn(0f, 1f)
             val barHeight = ratio * chartHeight
@@ -211,11 +213,6 @@ private fun MonthHeatmap(
         Color(0xFFF1EBE3), Color(0xFFF9E7CF), Color(0xFFF7DFB9),
         Color(0xFFF3D2A4), Color(0xFFF0C79A), Color(0xFFF0C4BE)
     )
-    val gradColors = if (darkTheme) listOf(
-        Color(0xFFA8C8A4), Color(0xFFE6C26A), Color(0xFFEFA968), Color(0xFFE0735A)
-    ) else listOf(
-        Color(0xFF8CAF8A), Color(0xFFC7A34A), Color(0xFFD98E4A), Color(0xFFC2563C)
-    )
 
     Canvas(modifier = modifier) {
         if (data.isEmpty()) return@Canvas
@@ -234,9 +231,9 @@ private fun MonthHeatmap(
         val availH = size.height - headerH - legendH - bottomPad
         val cellH = (availH - gap * (rows - 1)) / rows.toFloat()
         val corner = 8f * density
-        val dayFont = 10f * density * fontScale
-        val valueFont = 8.5f * density * fontScale
-        val headerFont = 11f * density * fontScale
+        val dayFont = ChartText.HEATMAP_DAY_SP * density * fontScale
+        val valueFont = ChartText.HEATMAP_VALUE_SP * density * fontScale
+        val headerFont = ChartText.HEATMAP_HEADER_SP * density * fontScale
 
         // 顶部星期表头
         val headerPaint = android.graphics.Paint().apply {
@@ -296,7 +293,7 @@ private fun MonthHeatmap(
                 drawContext.canvas.nativeCanvas.drawText("—", centerX, y + cellH * 0.78f, emptyPaint)
             } else {
                 val valuePaint = android.graphics.Paint().apply {
-                    color = gradientColor(day.totalMg, maxVal, gradColors).toArgb()
+                    color = gradientColor(day.totalMg, maxVal, darkTheme).toArgb()
                     textSize = valueFont
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
@@ -304,35 +301,23 @@ private fun MonthHeatmap(
             }
         }
 
-        // 底部图例：少 -> 多 -> 超限
+        // 底部图例：少 -> 多 -> 超限（末档红框即超限）
         val legendY = size.height - legendH / 2f + 4f * density
         val step = 22f * density
-        val buckets = cellFills
         val centerX = size.width / 2f
         val legendStart = centerX - step * 2.5f
-        val labelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = 10f * density * fontScale; alpha = 160
-            textAlign = android.graphics.Paint.Align.CENTER
-        }
+        val labelPaint = ChartText.paint(ChartText.LEGEND_SP, textArgb, density, fontScale, Paint.Align.CENTER, alpha = 160)
         drawContext.canvas.nativeCanvas.drawText("少", legendStart - step * 0.8f, legendY, labelPaint)
-        buckets.forEachIndexed { k, c ->
+        cellFills.forEachIndexed { k, c ->
             drawCircle(c, radius = 5f * density, center = Offset(legendStart + k * step, legendY))
+            if (k == cellFills.lastIndex) {
+                // 超限档单独描边，避免与"多"末档混淆
+                drawCircle(outlineColor, radius = 6f * density, center = Offset(legendStart + k * step, legendY), style = Stroke(width = 1.5f * density))
+            }
         }
-        drawContext.canvas.nativeCanvas.drawText("多", legendStart + 5f * step + step * 0.8f, legendY, labelPaint)
-        drawCircle(buckets[5], radius = 5f * density, center = Offset(legendStart + 7f * step, legendY))
-        drawContext.canvas.nativeCanvas.drawText("超限", legendStart + 7f * step + step * 0.8f, legendY, labelPaint)
+        drawContext.canvas.nativeCanvas.drawText("多/超限", legendStart + 5f * step + step * 0.8f, legendY, labelPaint)
     }
 }
 
-private fun gradientColor(value: Double, maxVal: Double, colors: List<Color>): Color {
-    val t = (value / maxVal.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
-    val green = colors[0]
-    val yellow = colors[1]
-    val orange = colors[2]
-    val red = colors[3]
-    return when {
-        t < 0.34f -> lerp(green, yellow, t / 0.34f)
-        t < 0.67f -> lerp(yellow, orange, (t - 0.34f) / 0.33f)
-        else -> lerp(orange, red, (t - 0.67f) / 0.33f)
-    }
-}
+private fun gradientColor(value: Double, maxVal: Double, darkTheme: Boolean): Color =
+    CaffeineLevels.gradient(value, maxVal, darkTheme)

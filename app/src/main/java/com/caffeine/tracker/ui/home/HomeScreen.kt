@@ -1,8 +1,10 @@
 package com.caffeine.tracker.ui.home
 
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,10 +51,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.caffeine.tracker.domain.CaffeineLevels
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
+import com.caffeine.tracker.ui.theme.AppAlpha
+import com.caffeine.tracker.ui.theme.AppDimens
+import com.caffeine.tracker.ui.theme.ChartText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -92,14 +101,10 @@ fun HomeScreen(
 private fun HeaderCard(state: HomeUiState) {
     val container = MaterialTheme.colorScheme.primaryContainer
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val darkTheme = isSystemInDarkTheme()
     // 状态色与曲线/小组件语义一致：绿→黄→橙→红（按当前体内咖啡因占比）
     val ratio = (state.currentLevel / state.dailyLimit.coerceAtLeast(1.0)).toFloat()
-    val statusColor = when {
-        ratio >= 0.75f -> Color(0xFFC2563C)
-        ratio >= 0.5f -> Color(0xFFD98E4A)
-        ratio >= 0.25f -> Color(0xFFC7A34A)
-        else -> Color(0xFF4CAF50)
-    }
+    val statusColor = CaffeineLevels.colorForRatio(ratio, darkTheme)
     val levelColor = when {
         ratio >= 0.75f -> Color(0xFF9B3D28)
         ratio >= 0.5f -> Color(0xFFB06F2E)
@@ -144,10 +149,7 @@ private fun HeaderCard(state: HomeUiState) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End
                 ) {
-                    listOf(
-                        Color(0xFF4CAF50), Color(0xFFC7A34A),
-                        Color(0xFFD98E4A), Color(0xFFC2563C)
-                    ).forEach { c ->
+                    CaffeineLevels.ramp(darkTheme).forEach { c ->
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
@@ -158,9 +160,9 @@ private fun HeaderCard(state: HomeUiState) {
                     }
                     Spacer(Modifier.width(2.dp))
                     Text(
-                        "低/<50%·中/50%·偏高/75%·高/≥75%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = contentColor.copy(alpha = 0.7f)
+                        "<25% 安全 · 25–50% 注意 · 50–75% 偏高 · ≥75% 过量",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor.copy(alpha = AppAlpha.Secondary)
                     )
                 }
                 Text(
@@ -176,9 +178,17 @@ private fun HeaderCard(state: HomeUiState) {
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     StatColumn("今日摄入", "%.0f mg".format(state.totalToday), contentColor, modifier = Modifier.weight(1f))
-                    StatColumn("可用限额", "%.0f mg".format(state.availableDailyLimit), contentColor, modifier = Modifier.weight(1f))
-                    StatColumn("睡眠安全", state.timeToSleepSafe, contentColor, modifier = Modifier.weight(1f))
+                    StatColumn("今日限额", "%.0f mg".format(state.todayLimit), contentColor, modifier = Modifier.weight(1f))
+                    StatColumn("剩余可摄", "%.0f mg".format(state.remainingToday), contentColor, modifier = Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "睡眠安全 · ${state.timeToSleepSafe}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor.copy(alpha = AppAlpha.Secondary),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -218,7 +228,9 @@ private fun CurveCard(state: HomeUiState) {
                     curveStartTime = state.curveStartTime,
                     curveEndTime = state.curveEndTime,
                     intakeTimestamps = state.todayRecords.map { it.timestamp },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .semantics { contentDescription = "体内咖啡因随时间变化曲线，红线为每日限额，绿线为睡眠安全 50mg" }
                 )
             }
         }
@@ -244,9 +256,8 @@ private fun CaffeineCurve(
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
     val sdfDay = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
     val fontScale = LocalConfiguration.current.fontScale
-    val yLabelSize = 20f * fontScale
-    val timeLabelSize = 16f * fontScale
-    val annotationSize = 18f * fontScale
+    val density = LocalDensity.current.density
+    val fs = ChartText.clampFontScale(fontScale)
 
     Canvas(modifier = modifier) {
         val maxVal = points.maxOf { it.level }.coerceAtLeast(dailyLimit) * 1.2
@@ -265,9 +276,10 @@ private fun CaffeineCurve(
         drawRect(safeColor.copy(alpha = 0.05f), Offset(0f, sleepY), androidx.compose.ui.geometry.Size(size.width, (size.height - sleepY).coerceAtLeast(0f)))
 
         // grid lines
-        val yLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = yLabelSize; alpha = 100
-        }
+        val yLabelPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.LEFT, alpha = 100
+        )
         for (i in 0..4) {
             val y = size.height * (1f - i / 4f)
             drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
@@ -277,10 +289,10 @@ private fun CaffeineCurve(
         }
 
         // time labels on x-axis
-        val timeLabelPaint = android.graphics.Paint().apply {
-            color = textArgb; textSize = timeLabelSize; alpha = 140
-            textAlign = android.graphics.Paint.Align.CENTER
-        }
+        val timeLabelPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.CENTER, alpha = 140
+        )
         val rangeHours = (displayEnd - displayStart) / 3_600_000f
         val tickCount = when {
             rangeHours <= 4 -> 4
@@ -300,9 +312,8 @@ private fun CaffeineCurve(
             strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
         drawContext.canvas.nativeCanvas.drawText(
             "每日限额 %.0fmg".format(dailyLimit), 4f, limitY - 4f,
-            android.graphics.Paint().apply {
-                color = limitColor.toArgb(); textSize = annotationSize; alpha = 160
-            }
+            ChartText.paint(ChartText.ANNOTATION_SP, limitColor.toArgb(), density, fs,
+                Paint.Align.LEFT, alpha = 160)
         )
 
         // sleep safe threshold dashed line
@@ -310,9 +321,8 @@ private fun CaffeineCurve(
             strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
         drawContext.canvas.nativeCanvas.drawText(
             "睡眠安全 50mg", 4f, sleepY - 4f,
-            android.graphics.Paint().apply {
-                color = safeColor.toArgb(); textSize = annotationSize; alpha = 160
-            }
+            ChartText.paint(ChartText.ANNOTATION_SP, safeColor.toArgb(), density, fs,
+                Paint.Align.LEFT, alpha = 160)
         )
 
         // curve with cubic bezier smoothing
@@ -383,7 +393,7 @@ private fun TodayRecordsList(
 ) {
     if (state.todayRecords.isEmpty()) return
     var pendingDelete by remember { mutableStateOf<com.caffeine.tracker.data.local.DrinkRecord?>(null) }
-    Text("今日记录", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+    Text("今日记录", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     state.todayRecords.forEach { record ->
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -412,9 +422,9 @@ private fun TodayRecordsList(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
-                    IconButton(onClick = { pendingDelete = record }, modifier = Modifier.size(36.dp)) {
+                    IconButton(onClick = { pendingDelete = record }, modifier = Modifier.size(AppDimens.MinTouchTarget)) {
                         Icon(Icons.Default.Delete, contentDescription = "删除",
-                            tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                            tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(AppDimens.IconTouchInner))
                     }
                 }
             }
