@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
@@ -26,6 +27,7 @@ data class AddDrinkUiState(
     val customVolumeMl: String = "",
     val calculatedCaffeine: Double = 0.0,
     val showCustomVolume: Boolean = false,
+    val timestamp: Long = 0L,   // 0 表示"现在"
     val saving: Boolean = false,
 )
 
@@ -115,6 +117,21 @@ class AddDrinkViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(calculatedCaffeine = drink.defaultCaffeineMg * ratio)
     }
 
+    fun setCustomTime(hour: Int, minute: Int) {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val ts = cal.timeInMillis.coerceAtMost(System.currentTimeMillis())
+        _uiState.value = _uiState.value.copy(timestamp = ts)
+    }
+
+    fun setTimestampNow() {
+        _uiState.value = _uiState.value.copy(timestamp = 0L)
+    }
+
     // suspend：调用方在协程中调用，可确保数据落库 + 小组件刷新完成后再执行后续操作（如返回上一页）。
     // 使用 refresh()（可等待）而非 refreshAsync()（fire-and-forget），
     // 确保 onSaved()/popBackStack 发生在 widget 已更新之后，避免首次 Glance 冷启动时刷新未完成。
@@ -130,6 +147,7 @@ class AddDrinkViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(saving = true)
         var success = false
         try {
+            val recordTimestamp = _uiState.value.timestamp.takeIf { it > 0 } ?: System.currentTimeMillis()
             withContext(Dispatchers.IO) {
                 drinkRepository.insert(
                     DrinkRecord(
@@ -137,7 +155,7 @@ class AddDrinkViewModel @Inject constructor(
                         emoji = drink.emoji,
                         caffeineMg = caffeine,
                         volumeMl = volume,
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = recordTimestamp,
                     )
                 )
             }

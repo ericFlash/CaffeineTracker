@@ -23,7 +23,8 @@ data class HomeUiState(
     val currentLevel: Double = 0.0,
     val totalToday: Double = 0.0,
     val dailyLimit: Double = 400.0,
-    val availableDailyLimit: Double = 400.0,
+    val todayLimit: Double = 400.0,       // 今日限额 = 日限额 − 昨日结转残留
+    val remainingToday: Double = 400.0,   // 剩余可摄 = 今日限额 − 今日摄入
     val timeToSleepSafe: String = "",
     val curveStartTime: Long = 0L,
     val curveEndTime: Long = 0L,
@@ -80,6 +81,7 @@ class HomeViewModel @Inject constructor(
                     residualRecords, halfLife, startOfDay
                 )
                 val availableLimit = (limit - carryoverAtStart).coerceAtLeast(0.0)
+                val remainingToday = (availableLimit - totalToday).coerceAtLeast(0.0)
 
                 val timeText = if (sleepTtzMs <= 0) "已低于安全线 ✓"
                 else {
@@ -95,7 +97,8 @@ class HomeViewModel @Inject constructor(
                     currentLevel = currentLevel,
                     totalToday = totalToday,
                     dailyLimit = limit,
-                    availableDailyLimit = availableLimit,
+                    todayLimit = availableLimit,
+                    remainingToday = remainingToday,
                     timeToSleepSafe = timeText,
                     curveStartTime = curveStart,
                     curveEndTime = curveEnd,

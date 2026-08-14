@@ -30,7 +30,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,8 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.caffeine.tracker.data.model.DrinkTemplate
+import com.caffeine.tracker.ui.theme.AppType
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,7 +118,7 @@ fun AddDrinkScreen(
             if (state.recentDrinks.isNotEmpty()) {
                 item(key = "recent") {
                     Column {
-                        Text("最近常用", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("最近常用", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(state.recentDrinks, key = { "${it.name}-${it.emoji}" }) { drink ->
                                 FilterChip(
@@ -124,7 +134,7 @@ fun AddDrinkScreen(
 
             item(key = "drink") {
                 Column {
-                    Text("① 选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("① 选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     DrinkGrid(
                         drinks = state.drinks,
                         selectedDrink = state.selectedDrink,
@@ -153,6 +163,15 @@ fun AddDrinkScreen(
                 )
             }
 
+            item(key = "time") {
+                TimeField(
+                    enabled = state.selectedDrink != null,
+                    timestamp = state.timestamp,
+                    onTimeSelected = { h, m -> viewModel.setCustomTime(h, m) },
+                    onNow = { viewModel.setTimestampNow() }
+                )
+            }
+
             if (state.showCustomVolume && state.selectedDrink != null) {
                 item(key = "custom") {
                     OutlinedTextField(
@@ -167,19 +186,70 @@ fun AddDrinkScreen(
 
             if (state.selectedDrink != null && state.calculatedCaffeine > 0) {
                 item(key = "caffeine") {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                            Text("咖啡因含量", style = MaterialTheme.typography.labelMedium)
-                            Text("%.0f mg".format(state.calculatedCaffeine),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold)
+                    Column {
+                        Text("③ 咖啡因含量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                                Text("咖啡因含量", style = MaterialTheme.typography.labelMedium)
+                                Text("%.0f mg".format(state.calculatedCaffeine),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeField(
+    enabled: Boolean,
+    timestamp: Long,
+    onTimeSelected: (Int, Int) -> Unit,
+    onNow: () -> Unit,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val display = if (timestamp <= 0) "现在"
+        else SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+    Column {
+        Text("时间", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(6.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(onClick = { if (enabled) showDialog = true }, enabled = enabled) { Text(display) }
+            if (timestamp > 0) {
+                Text(if (timestamp > 0) "· 已选择过去时间" else "", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
+            }
+        }
+    }
+    if (showDialog) {
+        val c = Calendar.getInstance().apply { if (timestamp > 0) timeInMillis = timestamp }
+        val timeState = rememberTimePickerState(
+            initialHour = c.get(Calendar.HOUR_OF_DAY),
+            initialMinute = c.get(Calendar.MINUTE)
+        )
+        TimePickerDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onTimeSelected(timeState.hour, timeState.minute)
+                    showDialog = false
+                }) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("取消") }
+            }
+        ) {
+            TimePicker(state = timeState)
         }
     }
 }
@@ -244,9 +314,11 @@ private fun DrinkGridItem(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = drink.name,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = AppType.GridName,
                 textAlign = TextAlign.Center,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -263,7 +335,7 @@ private fun SizeChips(
     onCustomSelected: () -> Unit,
 ) {
     Column {
-        Text("② 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("② 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
         if (!enabled) {
             Text("请先选择饮品，再选择杯量",

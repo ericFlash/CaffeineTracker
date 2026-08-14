@@ -247,7 +247,7 @@ private fun BackfillDrinkDropdown(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("选择饮品", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(12.dp))
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         items(drinks, key = { it.name }) { drink ->
@@ -287,7 +287,7 @@ private fun BackfillSizeChips(
     onCustomSelected: () -> Unit,
 ) {
     Column {
-        Text("④ 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("④ 杯量", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
         if (!enabled) {
             Text("请先选择饮品，再选择杯量",
@@ -323,7 +323,7 @@ private fun BackfillPickerField(
     onClick: () -> Unit,
 ) {
     Column {
-        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
         androidx.compose.material3.Surface(
             onClick = { onClick() },

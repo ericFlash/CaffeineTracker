@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caffeine.tracker.data.repository.SettingsRepository
+import com.caffeine.tracker.ui.theme.AppAlpha
+import com.caffeine.tracker.ui.theme.AppType
 
 private const val DEFAULT_WEIGHT = 70f
 private const val DEFAULT_HALF_LIFE = 5.0f
@@ -70,7 +72,7 @@ fun SettingsScreen(
             elevation = CardDefaults.cardElevation(1.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text("代谢参数", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("代谢参数", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(16.dp))
 
                 LabeledSlider(
@@ -136,10 +138,15 @@ fun SettingsScreen(
             elevation = CardDefaults.cardElevation(1.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text("外观", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("外观", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(12.dp))
-                Text("深色/浅色模式跟随系统", style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Column {
+                    Text("深色/浅色模式跟随系统", style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Spacer(Modifier.height(4.dp))
+                    Text("如需切换请使用系统设置", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = AppAlpha.Hint))
+                }
             }
         }
 
@@ -204,7 +211,7 @@ private fun LabeledSlider(
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: (() -> Unit)? = null,
 ) {
-    Text(label, style = MaterialTheme.typography.bodyMedium)
+    Text(label, fontSize = AppType.SliderLabel)
     Slider(
         value = value,
         onValueChange = onValueChange,

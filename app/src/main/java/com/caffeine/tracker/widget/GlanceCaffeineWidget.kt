@@ -8,7 +8,6 @@ import android.graphics.Paint
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +39,7 @@ import androidx.glance.unit.ColorProvider
 import com.caffeine.tracker.MainActivity
 import com.caffeine.tracker.data.local.CaffeineDatabase
 import com.caffeine.tracker.data.local.DrinkRecord
+import com.caffeine.tracker.domain.CaffeineLevels
 import com.caffeine.tracker.domain.CaffeinePharmacokinetics
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -87,7 +87,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
                 Row(modifier = GlanceModifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     data.hourly.take(6).forEach { hour ->
                         Column(modifier = GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = hour.time, style = TextStyle(color = ColorProvider(c.muted), fontSize = 9.sp))
+                            Text(text = hour.time, style = TextStyle(color = ColorProvider(c.muted), fontSize = 10.sp))
                         }
                     }
                 }
@@ -129,6 +129,7 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         }.distinctUntilChanged()
     }
     private fun buildWidgetData(today: List<DrinkRecord>, residual: List<DrinkRecord>, halfLife: Double, dailyLimit: Float, c: WC, now: Long, startOfDay: Long): WidgetData {
+        val night = (c == dark)
         val pairs = residual.map { it.caffeineMg to it.timestamp }
         val currentLevel = CaffeinePharmacokinetics.calculateCurrentLevel(pairs.map { it.first }, pairs.map { it.second }, halfLife, now)
         val totalToday = today.sumOf { it.caffeineMg }
@@ -143,9 +144,9 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         }
         val frac = (currentLevel / dailyLimit.toDouble()).toFloat().coerceIn(0f, 1f)
         val pct = (frac * 100).toInt()
-        val ring = when { frac >= 0.75f -> c.red; frac >= 0.5f -> c.orange; frac >= 0.25f -> c.yellow; else -> c.green }
+        val ring = CaffeineLevels.colorForRatio(frac, night)
         val bar = buildBarBitmap(frac, ring, c.track)
-        val hourlyData = hourly.map { (t, lvl) -> HourData(t, impactEmoji(lvl), "%.0f".format(lvl), gradientColor(lvl, dailyLimit.toDouble(), c)) }
+        val hourlyData = hourly.map { (t, lvl) -> HourData(t, impactEmoji(lvl), "%.0f".format(lvl), CaffeineLevels.gradient(lvl, dailyLimit.toDouble(), night)) }
         return WidgetData(currentLevel, "%.0f".format(currentLevel), "今日 %.0f/%.0f".format(totalToday, (dailyLimit.toDouble() - carryover).coerceAtLeast(0.0)), frac, "$pct%", ring, bar, metabolismText, hourlyData)
     }
     private fun buildBarBitmap(frac: Float, fillColor: Color, trackColor: Color): Bitmap {
@@ -161,10 +162,6 @@ class GlanceCaffeineWidget : GlanceAppWidget() {
         return bitmap
     }
     private fun impactEmoji(level: Double): String = when { level > 200 -> "🤯"; level > 100 -> "😬"; level > 50 -> "🙂"; else -> "😴" }
-    private fun gradientColor(level: Double, maxVal: Double, c: WC): Color {
-        val t = (level / maxVal.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
-        return when { t < 0.34f -> lerp(c.green, c.yellow, t / 0.34f); t < 0.67f -> lerp(c.yellow, c.orange, (t - 0.34f) / 0.33f); else -> lerp(c.orange, c.red, (t - 0.67f) / 0.33f) }
-    }
 }
 class GlanceCaffeineWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = GlanceCaffeineWidget()
