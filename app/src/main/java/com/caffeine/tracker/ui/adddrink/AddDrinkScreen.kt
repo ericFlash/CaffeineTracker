@@ -1,5 +1,7 @@
 package com.caffeine.tracker.ui.adddrink
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,7 +21,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,10 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,16 +46,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.caffeine.tracker.data.model.DrinkTemplate
+import com.caffeine.tracker.ui.theme.AppAlpha
+import com.caffeine.tracker.ui.theme.AppDimens
 import com.caffeine.tracker.ui.theme.AppType
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -206,7 +207,6 @@ fun AddDrinkScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimeField(
     enabled: Boolean,
@@ -214,41 +214,131 @@ private fun TimeField(
     onTimeSelected: (Int, Int) -> Unit,
     onNow: () -> Unit,
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    val display = if (timestamp <= 0) "现在"
-        else SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+    val now = remember { Calendar.getInstance() }
+    val cal = remember(timestamp) {
+        Calendar.getInstance().apply { if (timestamp > 0) timeInMillis = timestamp }
+    }
+    val isNow = timestamp <= 0
+    val hour = if (isNow) now.get(Calendar.HOUR_OF_DAY) else cal.get(Calendar.HOUR_OF_DAY)
+    val minute = if (isNow) now.get(Calendar.MINUTE) else cal.get(Calendar.MINUTE)
+    var localHour by remember { mutableStateOf(hour) }
+    var localMinute by remember { mutableStateOf(minute) }
+
     Column {
         Text("时间", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Surface(
+            onClick = { /* 卡片整体不可点；时/分数字框单独操作 */ },
+            enabled = enabled,
+            shape = RoundedCornerShape(AppDimens.RadiusListItem),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            TextButton(onClick = { if (enabled) showDialog = true }, enabled = enabled) { Text(display) }
-            if (timestamp > 0) {
-                Text(if (timestamp > 0) "· 已选择过去时间" else "", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    NumberColumn(
+                        value = localHour,
+                        range = 0..23,
+                        onValueChange = {
+                            localHour = it
+                            onTimeSelected(localHour, localMinute)
+                        },
+                        label = "时"
+                    )
+                    Text(
+                        ":",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    NumberColumn(
+                        value = localMinute,
+                        range = 0..59,
+                        onValueChange = {
+                            localMinute = it
+                            onTimeSelected(localHour, localMinute)
+                        },
+                        label = "分"
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                FilterChip(
+                    selected = isNow,
+                    onClick = onNow,
+                    label = { Text("现在") }
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = if (isNow) "按当前时刻计入"
+                           else "已选过去时间，将按该时刻计入",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isNow) MaterialTheme.colorScheme.onSurface.copy(alpha = AppAlpha.Hint)
+                            else MaterialTheme.colorScheme.tertiary
+                )
             }
         }
     }
-    if (showDialog) {
-        val c = Calendar.getInstance().apply { if (timestamp > 0) timeInMillis = timestamp }
-        val timeState = rememberTimePickerState(
-            initialHour = c.get(Calendar.HOUR_OF_DAY),
-            initialMinute = c.get(Calendar.MINUTE)
-        )
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onTimeSelected(timeState.hour, timeState.minute)
-                    showDialog = false
-                }) { Text("确定") }
+}
+
+@Composable
+private fun NumberColumn(
+    value: Int,
+    range: IntRange,
+    onValueChange: (Int) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        IconButton(
+            onClick = {
+                val next = if (value + 1 > range.last) range.first else value + 1
+                onValueChange(next)
             },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) { Text("取消") }
+            modifier = Modifier.size(AppDimens.IconTouchInner)
+        ) {
+            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "增加")
+        }
+        Box(
+            modifier = Modifier
+                .width(64.dp)
+                .height(48.dp)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline,
+                    RoundedCornerShape(10.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "%02d".format(value),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        IconButton(
+            onClick = {
+                val prev = if (value - 1 < range.first) range.last else value - 1
+                onValueChange(prev)
             },
-            text = { TimePicker(state = timeState) }
+            modifier = Modifier.size(AppDimens.IconTouchInner)
+        ) {
+            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "减少")
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = AppAlpha.Hint)
         )
     }
 }

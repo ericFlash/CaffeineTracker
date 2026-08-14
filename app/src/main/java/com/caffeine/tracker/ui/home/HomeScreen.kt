@@ -144,27 +144,6 @@ private fun HeaderCard(state: HomeUiState) {
                             .background(statusColor)
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    CaffeineLevels.ramp(darkTheme).forEach { c ->
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(c)
-                        )
-                        Spacer(Modifier.width(3.dp))
-                    }
-                    Spacer(Modifier.width(2.dp))
-                    Text(
-                        "<25% 安全 · 25–50% 注意 · 50–75% 偏高 · ≥75% 过量",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentColor.copy(alpha = AppAlpha.Secondary)
-                    )
-                }
                 Text(
                     text = "%.0f mg".format(state.currentLevel),
                     style = MaterialTheme.typography.displaySmall,
@@ -254,7 +233,7 @@ private fun CaffeineCurve(
     val safeColor = Color(0xFF4CAF50)
     val textArgb = textColor.toArgb()
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-    val sdfDay = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
+    val sdfDay = java.text.SimpleDateFormat("MM/dd", java.util.Locale.getDefault())
     val fontScale = LocalConfiguration.current.fontScale
     val density = LocalDensity.current.density
     val fs = ChartText.clampFontScale(fontScale)
@@ -288,23 +267,36 @@ private fun CaffeineCurve(
             )
         }
 
-        // time labels on x-axis
-        val timeLabelPaint = ChartText.paint(
-            ChartText.AXIS_SP, textArgb, density, fs,
-            Paint.Align.CENTER, alpha = 140
-        )
+        // time labels on x-axis：整体 4 个刻度；首标签左对齐、尾标签右对齐、中间居中，避免裁切/重叠
         val rangeHours = (displayEnd - displayStart) / 3_600_000f
         val tickCount = when {
             rangeHours <= 4 -> 4
-            rangeHours <= 12 -> 6
-            else -> 8
+            rangeHours <= 12 -> 4
+            else -> 4
         }
         val useDayFormat = rangeHours > 24
+        val centerPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.CENTER, alpha = 140
+        )
+        val leftPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.LEFT, alpha = 140
+        )
+        val rightPaint = ChartText.paint(
+            ChartText.AXIS_SP, textArgb, density, fs,
+            Paint.Align.RIGHT, alpha = 140
+        )
         for (i in 0..tickCount) {
             val t = displayStart + ((displayEnd - displayStart) * i / tickCount)
             val x = ((t - displayStart) / timeRange * size.width)
             val label = if (useDayFormat) sdfDay.format(java.util.Date(t)) else sdf.format(java.util.Date(t))
-            drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 4f, timeLabelPaint)
+            val paint = when (i) {
+                0 -> leftPaint
+                tickCount -> rightPaint
+                else -> centerPaint
+            }
+            drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 4f, paint)
         }
 
         // limit dashed line
