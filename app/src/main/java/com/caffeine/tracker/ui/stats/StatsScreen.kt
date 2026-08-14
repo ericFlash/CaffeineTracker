@@ -128,7 +128,7 @@ private fun BarChart(
         val maxVal = maxOf(data.maxOf { it.totalMg }, dailyLimit) * 1.15
         val chartLeft = 38f
         val chartTop = 6f
-        val chartBottom = size.height - 22f
+        val chartBottom = size.height - 28f * density
         val chartHeight = chartBottom - chartTop
         val totalBarArea = size.width - chartLeft
         val slot = totalBarArea / data.size
@@ -186,7 +186,7 @@ private fun BarChart(
                     drawPath(barPath, overColor.copy(alpha = 0.9f), style = Stroke(width = 2f))
                 }
             }
-            drawContext.canvas.nativeCanvas.drawText(day.weekday, x + barWidth / 2, size.height - 2f, xLabelPaint)
+            drawContext.canvas.nativeCanvas.drawText(day.weekday, x + barWidth / 2, size.height - 6f, xLabelPaint)
         }
     }
 }
@@ -306,8 +306,13 @@ private fun MonthHeatmap(
         val step = 22f * density
         val centerX = size.width / 2f
         val legendStart = centerX - step * 2.5f
-        val labelPaint = ChartText.paint(ChartText.LEGEND_SP, textArgb, density, fontScale, Paint.Align.CENTER, alpha = 160)
-        drawContext.canvas.nativeCanvas.drawText("少", legendStart - step * 0.8f, legendY, labelPaint)
+        // "少" 紧贴首圆圈左侧（RIGHT 对齐），"多/超限" 紧贴末圆圈右侧（LEFT 对齐），
+        // 避免大字号下文字与圆圈重合
+        val leftLabelPaint = ChartText.paint(ChartText.LEGEND_SP, textArgb, density, fontScale, Paint.Align.LEFT, alpha = 160)
+        val rightLabelPaint = ChartText.paint(ChartText.LEGEND_SP, textArgb, density, fontScale, Paint.Align.RIGHT, alpha = 160)
+        drawContext.canvas.nativeCanvas.drawText(
+            "少", legendStart - 5f * density - 4f * density, legendY, rightLabelPaint
+        )
         cellFills.forEachIndexed { k, c ->
             drawCircle(c, radius = 5f * density, center = Offset(legendStart + k * step, legendY))
             if (k == cellFills.lastIndex) {
@@ -315,7 +320,9 @@ private fun MonthHeatmap(
                 drawCircle(outlineColor, radius = 6f * density, center = Offset(legendStart + k * step, legendY), style = Stroke(width = 1.5f * density))
             }
         }
-        drawContext.canvas.nativeCanvas.drawText("多/超限", legendStart + 5f * step + step * 0.8f, legendY, labelPaint)
+        drawContext.canvas.nativeCanvas.drawText(
+            "多/超限", legendStart + 5f * step + 6f * density + 4f * density, legendY, leftLabelPaint
+        )
     }
 }
 

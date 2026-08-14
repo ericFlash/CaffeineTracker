@@ -259,8 +259,11 @@ private fun CaffeineCurve(
             ChartText.AXIS_SP, textArgb, density, fs,
             Paint.Align.LEFT, alpha = 100
         )
+        // X 轴标签预留高度，避免 Y 轴 "0" 与时间标签在左下角重合
+        val xAxisReserve = 16f * density
         for (i in 0..4) {
-            val y = size.height * (1f - i / 4f)
+            // 底部刻度（i=0，即 "0"）上移避开 X 轴标签区；其余保持原位
+            val y = if (i == 0) size.height - xAxisReserve else size.height * (1f - i / 4f)
             drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
             drawContext.canvas.nativeCanvas.drawText(
                 "%.0f".format(maxVal * i / 4), 4f, y - 4f, yLabelPaint
@@ -338,7 +341,7 @@ private fun CaffeineCurve(
                 val cy2 = curr.y - (next.y - prev.y) * tension
                 path.cubicTo(cx1, cy1, cx2, cy2, curr.x, curr.y)
             }
-            drawPath(path, lineColor, style = Stroke(width = 3f, cap = StrokeCap.Round))
+            drawPath(path, lineColor, style = Stroke(width = 4f, cap = StrokeCap.Round))
 
             // vertical gradient fill under curve
             val fillPath = Path().apply {
