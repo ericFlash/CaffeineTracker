@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,7 +33,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -237,7 +237,7 @@ private fun TimeField(
             initialHour = c.get(Calendar.HOUR_OF_DAY),
             initialMinute = c.get(Calendar.MINUTE)
         )
-        TimePickerDialog(
+        AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -247,10 +247,9 @@ private fun TimeField(
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) { Text("取消") }
-            }
-        ) {
-            TimePicker(state = timeState)
-        }
+            },
+            text = { TimePicker(state = timeState) }
+        )
     }
 }
 
