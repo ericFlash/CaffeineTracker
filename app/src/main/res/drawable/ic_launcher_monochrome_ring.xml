@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 概念三「能量环豆」单色剪影（themed icon）：环形仪表 + 咖啡豆 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 环形仪表 -->
+    <path
+        android:pathData="M54,24 A30,30 0 1 1 54,84 A30,30 0 1 1 54,24 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:fillColor="@android:color/transparent" />
+
+    <!-- 中心咖啡豆 -->
+    <group
+        android:rotation="-30"
+        android:pivotX="54"
+        android:pivotY="54">
+        <path
+            android:pathData="M40,54 C40,43.5 46.3,35 54,35 C61.7,35 68,43.5 68,54 C68,64.5 61.7,73 54,73 C46.3,73 40,64.5 40,54 Z"
+            android:fillColor="#FFFFFF" />
+    </group>
+</vector>
