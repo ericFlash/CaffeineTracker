@@ -245,6 +245,8 @@ private fun CaffeineCurve(
         val displayStart = minOf(minTime, curveStartTime)
         val displayEnd = maxOf(maxTime, curveEndTime)
         val timeRange = (displayEnd - displayStart).toFloat().coerceAtLeast(1f)
+        // 底部基准：与 X 轴标签区上方的底部网格线同高，避免 level=0 时曲线与 X 标签重叠
+        val chartBottom = size.height - 16f * density
 
         // limit band (red zone above dailyLimit)
         val limitY = size.height * (1f - (dailyLimit / maxVal)).toFloat()
@@ -304,7 +306,7 @@ private fun CaffeineCurve(
 
         // limit dashed line
         drawLine(limitColor.copy(alpha = 0.6f), Offset(0f, limitY), Offset(size.width, limitY),
-            strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
+            strokeWidth = 2.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
         drawContext.canvas.nativeCanvas.drawText(
             "每日限额 %.0fmg".format(dailyLimit), 4f, limitY - 4f,
             ChartText.paint(ChartText.ANNOTATION_SP, limitColor.toArgb(), density, fs,
@@ -313,7 +315,7 @@ private fun CaffeineCurve(
 
         // sleep safe threshold dashed line
         drawLine(safeColor.copy(alpha = 0.6f), Offset(0f, sleepY), Offset(size.width, sleepY),
-            strokeWidth = 1.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
+            strokeWidth = 2.5f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)))
         drawContext.canvas.nativeCanvas.drawText(
             "睡眠安全 50mg", 4f, sleepY - 4f,
             ChartText.paint(ChartText.ANNOTATION_SP, safeColor.toArgb(), density, fs,
@@ -325,7 +327,7 @@ private fun CaffeineCurve(
             val path = Path()
             val pts = points.map { pt ->
                 val x = ((pt.timestamp - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
-                val y = size.height * (1f - (pt.level / maxVal)).toFloat()
+                val y = chartBottom * (1f - (pt.level / maxVal)).toFloat()
                 Offset(x, y)
             }
             path.moveTo(pts[0].x, pts[0].y)
@@ -341,20 +343,20 @@ private fun CaffeineCurve(
                 val cy2 = curr.y - (next.y - prev.y) * tension
                 path.cubicTo(cx1, cy1, cx2, cy2, curr.x, curr.y)
             }
-            drawPath(path, lineColor, style = Stroke(width = 4f, cap = StrokeCap.Round))
+            drawPath(path, lineColor, style = Stroke(width = 8f, cap = StrokeCap.Round))
 
             // vertical gradient fill under curve
             val fillPath = Path().apply {
                 addPath(path)
-                lineTo(pts.last().x, size.height)
-                lineTo(pts.first().x, size.height)
+                lineTo(pts.last().x, chartBottom)
+                lineTo(pts.first().x, chartBottom)
                 close()
             }
             drawPath(
                 fillPath,
                 androidx.compose.ui.graphics.Brush.verticalGradient(
                     colors = listOf(lineColor.copy(alpha = 0.3f), lineColor.copy(alpha = 0.02f)),
-                    startY = 0f, endY = size.height
+                    startY = 0f, endY = chartBottom
                 )
             )
 
@@ -364,14 +366,14 @@ private fun CaffeineCurve(
                     val x = ((ts - displayStart) / timeRange * size.width).coerceIn(0f, size.width)
                     val pt = points.minByOrNull { kotlin.math.abs(it.timestamp - ts) }
                     val level = pt?.level ?: 0.0
-                    val y = size.height * (1f - (level / maxVal)).toFloat()
-                    drawCircle(lineColor, radius = 5f, center = Offset(x, y))
-                    drawCircle(surfaceColor, radius = 3f, center = Offset(x, y))
+                    val y = chartBottom * (1f - (level / maxVal)).toFloat()
+                    drawCircle(lineColor, radius = 6f, center = Offset(x, y))
+                    drawCircle(surfaceColor, radius = 3.5f, center = Offset(x, y))
                     // triangle marker at bottom
                     val tri = Path().apply {
-                        moveTo(x, size.height - 12f)
-                        lineTo(x - 4f, size.height - 4f)
-                        lineTo(x + 4f, size.height - 4f)
+                        moveTo(x, chartBottom - 12f)
+                        lineTo(x - 4f, chartBottom - 4f)
+                        lineTo(x + 4f, chartBottom - 4f)
                         close()
                     }
                     drawPath(tri, lineColor.copy(alpha = 0.8f))
